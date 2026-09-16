@@ -48,6 +48,16 @@ HOME_DEFAULTS: dict[str, str] = {
     "promise_body": "እያንዳንዱ የምንመርጠው ልብስ እና የምናዘጋጀው ምግብ የኢትዮጵያን ታሪክ ይይዛል።",
     "banner_photo_filename": "",
 }
+ABOUT_DEFAULTS: dict[str, str] = {
+    "title": "ስለ እኛ · About Us",
+    "body": (
+        "ቅርስ ቤት የተመሰረተው የኢትዮጵያን ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ "
+        "ለማድረስ ነው። እያንዳንዱ ምርት በጥንቃቄ እና በፍቅር የተዘጋጀ ነው። "
+        "አላማችን ደንበኞቻችን የኢትዮጵያን ባህል በቀላሉ እንዲያገኙ ማድረግ ነው።"
+    ),
+    "photo_filename": "",
+}
+ADMIN_URL_PARAM = "admin_key"
 STORE_PATH = Path(__file__).with_name("storefront_data.json")
 PHOTO_DIR = Path(__file__).with_name("product_photos")
 ALLOWED_PHOTO_SUFFIXES = {".png", ".jpg", ".jpeg", ".webp"}
@@ -62,6 +72,8 @@ def _default_store() -> dict[str, Any]:
         ],
         "orders": [],
         "home": dict(HOME_DEFAULTS),
+        "about": dict(ABOUT_DEFAULTS),
+        "faqs": [],
     }
 
 
@@ -110,7 +122,38 @@ def _read_store_unlocked() -> dict[str, Any]:
             if isinstance(value, str):
                 normalized_home[key] = value
 
-    return {"items": items, "orders": normalized_orders, "home": normalized_home}
+    about = data.get("about")
+    normalized_about = dict(ABOUT_DEFAULTS)
+    if isinstance(about, dict):
+        for key in ABOUT_DEFAULTS:
+            value = about.get(key)
+            if isinstance(value, str):
+                normalized_about[key] = value
+
+    faqs = data.get("faqs")
+    normalized_faqs = []
+    if isinstance(faqs, list):
+        for faq in faqs:
+            if (
+                isinstance(faq, dict)
+                and isinstance(faq.get("question"), str)
+                and isinstance(faq.get("answer"), str)
+            ):
+                normalized_faqs.append(
+                    {
+                        "id": faq.get("id") or f"faq-{uuid4().hex}",
+                        "question": faq["question"],
+                        "answer": faq["answer"],
+                    }
+                )
+
+    return {
+        "items": items,
+        "orders": normalized_orders,
+        "home": normalized_home,
+        "about": normalized_about,
+        "faqs": normalized_faqs,
+    }
 
 
 def read_store() -> dict[str, Any]:
@@ -252,6 +295,47 @@ def update_home_content(
         return home.get("banner_photo_filename", "")
 
     return update_store(mutate)
+
+
+def update_about_content(title: str, body: str, photo_filename: str | None = None) -> str:
+    def mutate(store: dict[str, Any]) -> str:
+        about = store.setdefault("about", dict(ABOUT_DEFAULTS))
+        about["title"] = title
+        about["body"] = body
+        if photo_filename is not None:
+            about["photo_filename"] = photo_filename
+        return about.get("photo_filename", "")
+
+    return update_store(mutate)
+
+
+def add_faq(question: str, answer: str) -> None:
+    def mutate(store: dict[str, Any]) -> None:
+        store.setdefault("faqs", []).append(
+            {"id": f"faq-{uuid4().hex}", "question": question, "answer": answer}
+        )
+
+    update_store(mutate)
+
+
+def edit_faq(faq_id: str, question: str, answer: str) -> None:
+    def mutate(store: dict[str, Any]) -> None:
+        for faq in store.get("faqs", []):
+            if faq.get("id") == faq_id:
+                faq["question"] = question
+                faq["answer"] = answer
+                return
+        raise ValueError("FAQ not found.")
+
+    update_store(mutate)
+
+
+def delete_faq(faq_id: str) -> None:
+    def mutate(store: dict[str, Any]) -> None:
+        faqs = store.get("faqs", [])
+        store["faqs"] = [faq for faq in faqs if faq.get("id") != faq_id]
+
+    update_store(mutate)
 
 
 def inject_styles() -> None:
@@ -413,49 +497,105 @@ def inject_styles() -> None:
             height: 100%;
             padding: 1.2rem;
             border: 1px solid rgba(24, 50, 43, .1);
-            border-radius: 1.2rem;
-            background: rgba(255, 253, 248, .9);
-            box-shadow: 0 10px 26px rgba(24, 50, 43, .06);
+            border-radius: 1.1rem;
+            background: rgba(255, 253, 248, .75);
+            box-shadow: 0 10px 25px rgba(24, 50, 43, .06);
         }}
 
         .feature-icon {{
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 2.4rem;
-            height: 2.4rem;
+            width: 2.8rem;
+            height: 2.8rem;
             margin-bottom: .7rem;
-            border-radius: .8rem;
-            color: #fffdf8;
-            background: var(--green);
-            font-size: 1.1rem;
+            border-radius: .9rem;
+            background: rgba(242, 201, 76, .22);
+            color: var(--ink);
+            font-size: 1.25rem;
         }}
 
         .feature-card h3 {{
-            margin: 0 0 .35rem;
+            margin: 0 0 .4rem;
             font-size: 1.05rem;
         }}
 
         .feature-card p {{
             margin: 0;
-            color: rgba(24, 50, 43, .68);
-            font-size: .92rem;
+            color: rgba(24, 50, 43, .7);
+            font-size: .9rem;
             line-height: 1.7;
         }}
 
-        .chat-note {{
-            padding: 1rem 1.2rem;
-            border: 1px dashed rgba(22, 132, 74, .4);
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: .45rem;
+            padding: .35rem;
+            border: 1px solid rgba(24, 50, 43, .1);
             border-radius: 1rem;
-            background: rgba(22, 132, 74, .06);
-            color: rgba(24, 50, 43, .8);
+            background: rgba(255, 253, 248, .82);
+        }}
+
+        .stTabs [data-baseweb="tab"] {{
+            height: 3rem;
+            padding: 0 1.15rem;
+            border-radius: .7rem;
+            color: rgba(24, 50, 43, .7);
+            font-weight: 700;
+        }}
+
+        .stTabs [aria-selected="true"] {{
+            background: var(--ink);
+            color: #fffdf8;
+        }}
+
+        .stButton > button, .stDownloadButton > button {{
+            border: 0;
+            border-radius: .75rem;
+            background: var(--green);
+            color: #fffdf8;
+            font-weight: 700;
+        }}
+
+        .stButton > button:hover, .stDownloadButton > button:hover {{
+            border: 0;
+            background: var(--ink);
+            color: #fffdf8;
+        }}
+
+        .chat-note {{
+            margin: 1rem 0;
+            padding: 1rem 1.1rem;
+            border-left: 4px solid var(--yellow);
+            border-radius: .7rem;
+            background: rgba(242, 201, 76, .14);
+            color: rgba(24, 50, 43, .82);
+            line-height: 1.75;
+        }}
+
+        .price-pill {{
+            display: inline-block;
+            margin-top: .55rem;
+            padding: .25rem .6rem;
+            border-radius: 999px;
+            background: rgba(22, 132, 74, .1);
+            color: var(--green);
+            font-size: .8rem;
+            font-weight: 800;
+        }}
+
+        .gallery-empty {{
+            padding: 2.4rem 1rem;
+            border: 1px dashed rgba(24, 50, 43, .22);
+            border-radius: 1rem;
+            text-align: center;
+            color: rgba(24, 50, 43, .65);
         }}
 
         .footer {{
             margin-top: 3rem;
-            padding-top: 1.4rem;
-            border-top: 1px solid rgba(24, 50, 43, .1);
-            color: rgba(24, 50, 43, .55);
+            padding-top: 1.25rem;
+            border-top: 1px solid rgba(24, 50, 43, .12);
+            color: rgba(24, 50, 43, .6);
             font-size: .85rem;
             text-align: center;
         }}
@@ -475,6 +615,39 @@ def render_brand_header() -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def _render_order_now(item: dict[str, Any], key_prefix: str) -> None:
+    with st.expander("ይዘዙ · Order Now"):
+        with st.form(f"{key_prefix}_order_{item['id']}"):
+            quantity = st.number_input(
+                "ብዛት", min_value=1, max_value=50, value=1, step=1,
+                key=f"{key_prefix}_qty_{item['id']}",
+            )
+            name = st.text_input("ሙሉ ስም", key=f"{key_prefix}_name_{item['id']}")
+            phone = st.text_input("ስልክ ቁጥር", key=f"{key_prefix}_phone_{item['id']}")
+            notes = st.text_area(
+                "ተጨማሪ መረጃ (አማራጭ)", height=70, key=f"{key_prefix}_notes_{item['id']}"
+            )
+            submit = st.form_submit_button("ትዕዛዝ ላክ", use_container_width=True)
+        if submit:
+            clean_name = name.strip()
+            clean_phone = phone.strip()
+            if not clean_name or not clean_phone:
+                st.error("እባክዎ ሙሉ ስምዎን እና ስልክ ቁጥርዎን ያስገቡ።")
+            else:
+                order = add_order(
+                    {
+                        "item": item["name"],
+                        "category": item["category"],
+                        "quantity": int(quantity),
+                        "total": int(item["price"]) * int(quantity),
+                        "name": clean_name,
+                        "phone": clean_phone,
+                        "notes": notes.strip(),
+                    }
+                )
+                st.success(f"ትዕዛዝዎ ተልኳል! የትዕዛዝ ቁጥርዎ፦ {order['number']}")
 
 
 def render_home() -> None:
@@ -527,74 +700,146 @@ def render_home() -> None:
         unsafe_allow_html=True,
     )
 
-
-def render_gallery() -> None:
-    st.markdown('<div class="eyebrow">Gallery · ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-intro"><h2>የልብስ እና ምግብ ማዕከለ-ስዕል</h2>'
-        "<p>ያሉንን ምርቶች በዋጋቸው እና በፎቶቸው ይመልከቱ።</p></div>",
-        unsafe_allow_html=True,
-    )
-
-    store = read_store()
-    items = store["items"]
-
-    category_filter = st.radio(
-        "ማጣሪያ",
-        ["ሁሉም", "ልብስ", "ምግብ"],
-        horizontal=True,
-        key="gallery_category_filter",
-    )
-    filtered_items = [
-        item
-        for item in items
-        if category_filter == "ሁሉም" or item["category"] == category_filter
-    ]
-
-    if not filtered_items:
-        st.info("በዚህ ዓይነት ምንም ምርት አልተገኘም።")
-        return
-
-    columns = st.columns(3)
-    for index, item in enumerate(filtered_items):
-        with columns[index % 3]:
-            photo_path = _product_photo_path(item.get("photo_filename", ""))
-            if photo_path:
-                st.image(str(photo_path), use_container_width=True)
-            else:
+    catalog_items = read_store()["items"]
+    if catalog_items:
+        st.markdown(
+            '<div class="eyebrow" style="margin-top:2.2rem;">Featured · ተወዳጅ ምርቶች</div>',
+            unsafe_allow_html=True,
+        )
+        featured = catalog_items[:3]
+        featured_columns = st.columns(len(featured))
+        for column, item in zip(featured_columns, featured):
+            with column:
+                photo_path = _product_photo_path(item.get("photo_filename", ""))
+                if photo_path:
+                    st.image(str(photo_path), use_container_width=True)
+                else:
+                    st.markdown(
+                        '<div class="gallery-empty" style="padding:3.5rem 1rem;">'
+                        "ምስል አልተጫነም</div>",
+                        unsafe_allow_html=True,
+                    )
+                st.subheader(item["name"])
                 st.markdown(
-                    '<div style="height:180px;border-radius:1rem;background:rgba(24,50,43,.06);'
-                    'display:flex;align-items:center;justify-content:center;color:rgba(24,50,43,.4);">'
-                    "ምስል የለም</div>",
+                    f'<span class="price-pill">{item["price"]:,} ብር</span>',
                     unsafe_allow_html=True,
                 )
-            st.markdown(f"**{item['name']}**")
-            st.caption(f"{item['category']} · {item['price']:,} ብር")
+                _render_order_now(item, key_prefix="home")
+
+
+def render_gallery() -> None:
+    st.markdown('<div class="eyebrow">Shop & Gallery · ሱቅ እና ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-intro"><h2>ምርቶቻችንን ይመልከቱ</h2>'
+        "<p>የልብስ እና የምግብ ምርቶችን ከዋጋቸው ጋር ይመልከቱ። የተጨመሩ ምርቶች እዚህ በቀጥታ ይታያሉ።</p></div>",
+        unsafe_allow_html=True,
+    )
+    catalog_items = read_store()["items"]
+    catalog_filter = st.selectbox("የምርት ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"], key="shop_category")
+    visible_catalog = [
+        item for item in catalog_items if catalog_filter == "ሁሉም" or item["category"] == catalog_filter
+    ]
+    if not visible_catalog:
+        st.info("በዚህ ዓይነት የተመዘገበ ምርት የለም።")
+    else:
+        product_columns = st.columns(min(3, len(visible_catalog)))
+        for index, item in enumerate(visible_catalog):
+            with product_columns[index % len(product_columns)]:
+                photo_path = _product_photo_path(item.get("photo_filename", ""))
+                if photo_path:
+                    st.image(str(photo_path), use_container_width=True)
+                else:
+                    st.markdown(
+                        '<div class="gallery-empty" style="padding:3.5rem 1rem;">'
+                        "ምስል አልተጫነም</div>",
+                        unsafe_allow_html=True,
+                    )
+                st.subheader(item["name"])
+                st.caption(item["category"])
+                st.markdown(
+                    f'<span class="price-pill">{item["price"]:,} ብር</span>',
+                    unsafe_allow_html=True,
+                )
+                _render_order_now(item, key_prefix="gallery")
+
+    st.markdown('<div class="eyebrow">Community gallery · የማህበረሰብ ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
+    st.markdown(
+        "<p>የራስዎን የልብስ ወይም የምግብ ምስሎች በዚህ ጉብኝት ውስጥ ለማሳየት ይጫኑ።</p>",
+        unsafe_allow_html=True,
+    )
+    upload_col, filter_col = st.columns([2, 1])
+    with upload_col:
+        uploads = st.file_uploader(
+            "ምስሎችን ይምረጡ",
+            type=["png", "jpg", "jpeg", "webp"],
+            accept_multiple_files=True,
+            help="PNG, JPG ወይም WEBP ምስሎችን መምረጥ ይችላሉ።",
+        )
+    with filter_col:
+        category = st.selectbox("ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"])
+
+    if uploads:
+        st.session_state.gallery_images = [
+            {
+                "name": item.name,
+                "bytes": item.getvalue(),
+                "category": "ልብስ" if "dress" in item.name.lower() or "cloth" in item.name.lower() else "ምግብ",
+            }
+            for item in uploads
+        ]
+
+    gallery_images = st.session_state.get("gallery_images", [])
+    visible_images = [
+        image for image in gallery_images if category == "ሁሉም" or image["category"] == category
+    ]
+
+    if not visible_images:
+        st.markdown(
+            '<div class="gallery-empty">ምስሎች እስካሁን አልተጫኑም። የመጀመሪያውን የቅርስ ምስል ያካፍሉ።</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    columns = st.columns(min(3, len(visible_images)))
+    for index, image in enumerate(visible_images):
+        with columns[index % len(columns)]:
+            st.image(image["bytes"], use_container_width=True)
+            st.caption(f"{image['category']} · {image['name']}")
+
+
+def render_about() -> None:
+    about = read_store().get("about", dict(ABOUT_DEFAULTS))
+    st.markdown('<div class="eyebrow">About · ስለ እኛ</div>', unsafe_allow_html=True)
+    st.markdown(f"<h1>{about['title']}</h1>", unsafe_allow_html=True)
+
+    photo_path = _product_photo_path(about.get("photo_filename", ""))
+    if photo_path:
+        st.image(str(photo_path), use_container_width=True)
+
+    st.markdown(
+        f'<div class="section-intro"><p style="white-space:pre-line;">{about["body"]}</p></div>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_order() -> None:
     st.markdown('<div class="eyebrow">Order · ትዕዛዝ</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-intro"><h2>ትዕዛዝ ያስገቡ</h2>'
-        "<p>የሚፈልጉትን ምርት ይምረጡ እና መረጃዎን ያስገቡ።</p></div>",
+        '<div class="section-intro"><h2>ትዕዛዝዎን ያስገቡ</h2>'
+        "<p>የሚፈልጉትን ልብስ ወይም ምግብ ይምረጡ፣ መጠኑን ያስገቡ እና የመገናኛ መረጃዎን ያካፍሉ።</p></div>",
         unsafe_allow_html=True,
     )
+    st.info("ይህ የትዕዛዝ ጥያቄ ነው። የመጨረሻ ዋጋና ማድረሻ ለማረጋገጥ በስልክ እንገናኛለን።")
 
     category = st.radio(
-        "ዓይነት",
+        "የምርት ዓይነት",
         ["ሁሉም", "ልብስ", "ምግብ"],
         horizontal=True,
-        key="order_category_filter",
     )
-
     catalog_items = read_store()["items"]
     available_items = [
         item for item in catalog_items if category == "ሁሉም" or item["category"] == category
     ]
-
-    if not available_items:
-        st.info("በዚህ ዓይነት ምንም ምርት የለም።")
-        return
 
     with st.form("order_request_form", clear_on_submit=False):
         item = st.selectbox(
@@ -602,31 +847,63 @@ def render_order() -> None:
             available_items,
             format_func=lambda product: f"{product['name']} · {product['price']:,} ብር",
         )
-        quantity = st.number_input("ብዛት", min_value=1, max_value=50, value=1, step=1)
-        name = st.text_input("ሙሉ ስም")
-        phone = st.text_input("ስልክ ቁጥር")
-        notes = st.text_area("ተጨማሪ መረጃ (አማራጭ)", height=80)
-        submit = st.form_submit_button("ትዕዛዝ ላክ", use_container_width=True)
+        quantity = st.number_input(
+            "ብዛት",
+            min_value=1,
+            max_value=100,
+            value=1,
+            step=1,
+        )
+        total = item["price"] * quantity
+        st.markdown(
+            f'<div class="price-pill">ጠቅላላ ግምታዊ ዋጋ · {total:,} ብር</div>',
+            unsafe_allow_html=True,
+        )
 
-    if submit:
-        clean_name = name.strip()
+        name_col, phone_col = st.columns(2)
+        with name_col:
+            customer_name = st.text_input("ሙሉ ስም *", placeholder="ለምሳሌ፦ ሀና አበበ")
+        with phone_col:
+            phone = st.text_input("ስልክ ቁጥር *", placeholder="ለምሳሌ፦ 09XXXXXXXX")
+
+        submitted = st.form_submit_button("የትዕዛዝ ጥያቄ ላክ", use_container_width=True)
+
+    if submitted:
+        errors = []
+        clean_name = customer_name.strip()
         clean_phone = phone.strip()
-        if not clean_name or not clean_phone:
-            st.error("እባክዎ ሙሉ ስምዎን እና ስልክ ቁጥርዎን ያስገቡ።")
-        else:
-            order = add_order(
-                {
-                    "item": item["name"],
-                    "category": item["category"],
-                    "quantity": int(quantity),
-                    "total": int(item["price"]) * int(quantity),
-                    "name": clean_name,
-                    "phone": clean_phone,
-                    "notes": notes.strip(),
-                }
-            )
-            st.success(f"ትዕዛዝዎ ተልኳል! የትዕዛዝ ቁጥርዎ፦ {order['number']}")
+        phone_digits = re.sub(r"\D", "", clean_phone)
+        if not clean_name:
+            errors.append("ሙሉ ስምዎን ያስገቡ።")
+        if not clean_phone or len(phone_digits) < 7 or len(phone_digits) > 15:
+            errors.append("ትክክለኛ የስልክ ቁጥር ያስገቡ።")
 
+        if errors:
+            st.session_state.last_order = None
+            st.error("እባክዎ የተጠየቁትን መረጃዎች ያሟሉ።\n\n" + "\n".join(f"- {error}" for error in errors))
+        else:
+            order = {
+                "item": item["name"],
+                "category": item["category"],
+                "quantity": quantity,
+                "total": total,
+                "name": clean_name,
+                "phone": clean_phone,
+            }
+            st.session_state.last_order = add_order(order)
+
+    last_order = st.session_state.get("last_order")
+    if last_order:
+        st.success(f"ትዕዛዝ ጥያቄዎ ተቀብሏል። የጥያቄ ቁጥርዎ: {last_order['number']}")
+        st.markdown(
+            f'<div class="feature-card"><h3>የትዕዛዝ ማጠቃለያ</h3>'
+            f"<p><b>ምርት:</b> {last_order['item']}<br>"
+            f"<b>ብዛት:</b> {last_order['quantity']}<br>"
+            f"<b>ግምታዊ ዋጋ:</b> {last_order['total']:,} ብር<br>"
+            f"<b>ስም:</b> {last_order['name']}<br>"
+            f"<b>ስልክ:</b> {last_order['phone']}</p></div>",
+            unsafe_allow_html=True,
+        )
 
 def _order_status_label(status: str) -> str:
     return "ተጠናቋል · Completed" if status == "completed" else "በመጠባበቅ ላይ · Pending"
@@ -867,6 +1144,88 @@ def render_admin_dashboard() -> None:
         st.session_state.admin_notice = "የመነሻ ገጽ ተዘምኗል።"
         st.rerun()
 
+    st.markdown('<div class="eyebrow">About Us · ስለ እኛ</div>', unsafe_allow_html=True)
+    st.markdown("<h2>የ'ስለ እኛ' ገጽ ማስተካከያ</h2>", unsafe_allow_html=True)
+
+    about = read_store().get("about", dict(ABOUT_DEFAULTS))
+    current_about_photo = _product_photo_path(about.get("photo_filename", ""))
+    if current_about_photo:
+        st.image(str(current_about_photo), caption="የአሁኑ ፎቶ", use_container_width=True)
+
+    with st.form("admin_edit_about"):
+        about_title = st.text_input("ርዕስ", value=about["title"], key="about_title")
+        about_body = st.text_area(
+            "ሙሉ መግለጫ", value=about["body"], key="about_body", height=160
+        )
+        about_photo = st.file_uploader(
+            "አዲስ ፎቶ (ከፈለጉ ብቻ)",
+            type=["png", "jpg", "jpeg", "webp"],
+            key="about_photo_uploader",
+        )
+        save_about = st.form_submit_button("ስለ እኛ ለውጦችን አስቀምጥ", use_container_width=True)
+
+    if save_about:
+        old_about_photo = about.get("photo_filename", "")
+        new_about_filename = None
+        if about_photo:
+            new_about_filename = _save_product_photo(about_photo.getvalue(), about_photo.name)
+        try:
+            update_about_content(about_title.strip(), about_body.strip(), new_about_filename)
+        except Exception:
+            if new_about_filename:
+                _remove_product_photo(new_about_filename)
+            raise
+        if new_about_filename and new_about_filename != old_about_photo and old_about_photo:
+            _remove_product_photo(old_about_photo)
+        st.session_state.admin_notice = "የ'ስለ እኛ' ገጽ ተዘምኗል።"
+        st.rerun()
+
+    st.markdown('<div class="eyebrow">Chatbot Knowledge Base · የቻትቦት እውቀት</div>', unsafe_allow_html=True)
+    st.markdown("<h2>ጥያቄ እና መልስ (FAQ) ማስተዳደር</h2>", unsafe_allow_html=True)
+    st.caption("እዚህ የሚጨመሩ ጥያቄና መልሶች AI ረዳቱ ደንበኞችን ሲመልስ ይጠቀምባቸዋል።")
+
+    faqs = read_store().get("faqs", [])
+    with st.form("admin_add_faq"):
+        st.markdown("**አዲስ ጥያቄ እና መልስ ጨምር**")
+        new_question = st.text_input("ጥያቄ", key="new_faq_question")
+        new_answer = st.text_area("መልስ", key="new_faq_answer", height=90)
+        add_faq_submit = st.form_submit_button("ጨምር", use_container_width=True)
+    if add_faq_submit:
+        clean_question = new_question.strip()
+        clean_answer = new_answer.strip()
+        if not clean_question or not clean_answer:
+            st.error("ጥያቄ እና መልስ ሁለቱንም ያስገቡ።")
+        else:
+            add_faq(clean_question, clean_answer)
+            st.session_state.admin_notice = "ጥያቄ እና መልስ ተጨምሯል።"
+            st.rerun()
+
+    if faqs:
+        for faq in faqs:
+            with st.expander(faq["question"]):
+                with st.form(f"edit_faq_{faq['id']}"):
+                    edit_question = st.text_input(
+                        "ጥያቄ", value=faq["question"], key=f"faq_q_{faq['id']}"
+                    )
+                    edit_answer = st.text_area(
+                        "መልስ", value=faq["answer"], key=f"faq_a_{faq['id']}", height=90
+                    )
+                    save_faq_col, delete_faq_col = st.columns(2)
+                    with save_faq_col:
+                        save_faq_submit = st.form_submit_button("አስቀምጥ", use_container_width=True)
+                    with delete_faq_col:
+                        delete_faq_submit = st.form_submit_button("ሰርዝ", use_container_width=True)
+                if save_faq_submit:
+                    edit_faq(faq["id"], edit_question.strip(), edit_answer.strip())
+                    st.session_state.admin_notice = "ጥያቄና መልስ ተዘምኗል።"
+                    st.rerun()
+                if delete_faq_submit:
+                    delete_faq(faq["id"])
+                    st.session_state.admin_notice = "ጥያቄና መልስ ተሰርዟል።"
+                    st.rerun()
+    else:
+        st.caption("እስካሁን የተጨመረ ጥያቄና መልስ የለም።")
+
 
 def render_admin() -> None:
     st.markdown('<div class="eyebrow">Admin · አስተዳደር</div>', unsafe_allow_html=True)
@@ -900,80 +1259,151 @@ def render_admin() -> None:
 
 
 def _groq_error_detail(response: requests.Response, api_key: str) -> str:
+    """Return a short, safe diagnostic without exposing the API key."""
     try:
         payload = response.json()
-        message = payload.get("error", {}).get("message", "")
+        error = payload.get("error") if isinstance(payload, dict) else None
+        if isinstance(error, dict):
+            message = error.get("message") or error.get("type") or str(error)
+        elif error:
+            message = str(error)
+        else:
+            message = response.text.strip()
     except ValueError:
-        message = response.text[:200]
-    key_hint = f" (key starts with {api_key[:6]}...)" if api_key else " (no API key found)"
-    return f"HTTP {response.status_code}{key_hint}: {message}"
+        message = response.text.strip()
+
+    message = " ".join(str(message).split())
+    if not message:
+        message = response.reason or "No error message returned by Groq."
+    message = message.replace(api_key, "[redacted]")
+    return f"HTTP {response.status_code}: {message[:320]}"
 
 
 def groq_reply(messages: list[dict[str, str]]) -> tuple[str, str | None]:
-    api_key = os.getenv("GROQ_API_KEY", "")
+    api_key = os.getenv("GROQ_API_KEY", "").strip()
     if not api_key:
-        return "", "GROQ_API_KEY ሚስጥሩ አልተዘጋጀም። እባክዎ አስተዳዳሪውን ያነጋግሩ።"
+        return (
+            "ይቅርታ፣ የAI አገልግሎት ቁልፍ አልተዘጋጀም። እባክዎ በኋላ ይሞክሩ።",
+            "GROQ_API_KEY is missing or empty in the running app environment.",
+        )
 
-    system_prompt = (
-        "አንተ የቅርስ ቤት ደንበኛ አገልግሎት ረዳት ነህ። ንግዱ ባህላዊ የኢትዮጵያ ልብስ እና ምግብ ያቀርባል። "
-        "ሁልጊዜ በአማርኛ፣ በትህትና እና በአጭሩ መልስ ስጥ። ስለ ዋጋ፣ ምርት እና ትዕዛዝ ጥያቄዎችን ይመልሱ።"
-    )
     store = read_store()
-    catalog_summary = "\n".join(
-        f"- {item['name']} ({item['category']}): {item['price']:,} ብር"
-        for item in store["items"]
+    catalog_items = store["items"]
+    catalog_context = "\n".join(
+        f"- {item['name']}: {item['price']:,} ብር" for item in catalog_items
     )
-    full_system_prompt = f"{system_prompt}\n\nየአሁኑ ምርቶች:\n{catalog_summary}"
-
+    faqs = store.get("faqs", [])
+    faq_context = "\n".join(f"ጥ: {faq['question']}\nመ: {faq['answer']}" for faq in faqs)
+    faq_section = f"\n\nየተለመዱ ጥያቄና መልሶች:\n{faq_context}\n" if faq_context else ""
+    system_message = {
+        "role": "system",
+        "content": (
+            "እርስዎ የቅርስ ቤት የደንበኛ ረዳት ነዎት። ሁልጊዜ በአማርኛ ብቻ "
+            "በትህትና፣ በግልጽነት እና በአጭር ይመልሱ። ዋጋ የሌለውን ነገር "
+            "አትገምቱ፤ ከዚህ የንግድ መረጃ ውጭ ከሆነ ደንበኛው በቀጥታ እንዲጠይቅ "
+            "ይጋብዙት። ትዕዛዝ ለመስጠት የሚፈለገውን ዕቃ፣ መጠን/ብዛት፣ አድራሻ "
+            "እና ስልክ እንዲያዘጋጅ ያስታውሱ።\n\n"
+            f"የአሁኑ ምናሌ እና ዋጋዎች:\n{catalog_context}\n"
+            "የማድረሻ ጊዜ እና የመጨረሻ ዋጋ እንደ አካባቢ ሊለያይ ይችላል።"
+            f"{faq_section}"
+        ),
+    }
     try:
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}"},
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
                 "model": GROQ_MODEL,
-                "messages": [{"role": "system", "content": full_system_prompt}] + messages,
+                "messages": [system_message, *messages],
+                "temperature": 0.4,
+                "max_tokens": 500,
             },
-            timeout=30,
+            timeout=45,
         )
-        if response.status_code != 200:
-            return "", _groq_error_detail(response, api_key)
-        data = response.json()
-        answer = data["choices"][0]["message"]["content"]
-        return answer, None
-    except requests.RequestException as exc:
-        return "", f"የግንኙነት ስህተት፦ {exc}"
+        if not response.ok:
+            detail = _groq_error_detail(response, api_key)
+            if response.status_code in {401, 403}:
+                customer_message = (
+                    "ይቅርታ፣ የAI አገልግሎት ቁልፍ ችግር አለበት። "
+                    "እባክዎ በኋላ ይሞክሩ።"
+                )
+            elif response.status_code == 429:
+                customer_message = (
+                    "ይቅርታ፣ የAI አገልግሎቱ ለጊዜው ተጨናንቋል። "
+                    "እባክዎ ጥቂት ቆይተው ይሞክሩ።"
+                )
+            else:
+                customer_message = (
+                    "ይቅርታ፣ ከAI ረዳቱ ጋር ግንኙነት ላይ ችግር ተፈጥሯል። "
+                    "እባክዎ ጥቂት ቆይተው ይሞክሩ።"
+                )
+            return customer_message, detail
+
+        payload: dict[str, Any] = response.json()
+        content = payload["choices"][0]["message"]["content"]
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("Groq returned an empty assistant message.")
+        return content.strip(), None
+    except requests.Timeout:
+        return (
+            "ይቅርታ፣ የAI ረዳቱ ምላሽ ለመስጠት በጣም ዘግይቷል። እባክዎ እንደገና ይሞክሩ።",
+            "The Groq request timed out after 45 seconds.",
+        )
+    except requests.ConnectionError as error:
+        return (
+            "ይቅርታ፣ ከAI ረዳቱ ጋር መገናኘት አልተቻለም። እባክዎ ቆይተው ይሞክሩ።",
+            f"Could not connect to Groq: {type(error).__name__}.",
+        )
+    except requests.RequestException as error:
+        return (
+            "ይቅርታ፣ ከAI ረዳቱ ጋር ግንኙነት ላይ ችግር ተፈጥሯል። እባክዎ ጥቂት ቆይተው ይሞክሩ።",
+            f"Groq request failed: {type(error).__name__}.",
+        )
+    except (KeyError, IndexError, TypeError, ValueError) as error:
+        return (
+            "ይቅርታ፣ የAI ምላሹን ማንበብ አልተቻለም። እባክዎ ጥያቄዎን እንደገና ይላኩ።",
+            f"Groq returned an unexpected response: {type(error).__name__}: {error}",
+        )
 
 
 def render_chat() -> None:
-    st.markdown('<div class="eyebrow">AI Assistant · AI ረዳት</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">AI assistant · የAI ረዳት</div>', unsafe_allow_html=True)
     st.markdown(
-        '<div class="section-intro"><h2>ጥያቄ ይጠይቁ</h2>'
-        "<p>ስለ ዋጋ፣ ምርት ወይም ትዕዛዝ ማንኛውንም ጥያቄ ይጠይቁ።</p></div>",
+        '<div class="section-intro"><h2>ጥያቄ አለዎት? በአማርኛ ይጠይቁ</h2>'
+        "<p>ስለ ልብስ ዋጋ፣ ስለ ምግብ ምናሌ ወይም ትዕዛዝ አሰጣጥ ይጠይቁ።</p></div>",
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        '<div class="chat-note">ምሳሌ፦ <b>የሴቶች ባህላዊ ቀሚስ ስንት ነው?</b> ወይም '
+        "<b>የበዓል ምግብ ጥቅል እንዴት እዘዛለሁ?</b></div>",
         unsafe_allow_html=True,
     )
 
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = [
-            {"role": "assistant", "content": "ሰላም! እንኳን ደህና መጡ። ስለ ልብስ ወይም ምግብ ማንኛውንም ጥያቄ ሊጠይቁኝ ይችላሉ።"}
+            {
+                "role": "assistant",
+                "content": "ሰላም! እንኳን ወደ ቅርስ ቤት በደህና መጡ። ስለ ልብስ፣ ምግብ ዋጋ ወይም ትዕዛዝ ምን ልርዳዎት?",
+            }
         ]
 
     for message in st.session_state.chat_messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    prompt = st.chat_input("መልእክትዎን ይጻፉ...")
+    prompt = st.chat_input("ጥያቄዎን በአማርኛ ይጻፉ...")
     if prompt:
         st.session_state.chat_messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
-
         with st.chat_message("assistant"):
-            with st.spinner("እያሰብኩ ነው..."):
-                answer, error = groq_reply(st.session_state.chat_messages)
-            if error:
-                st.error(error)
-                answer = "ይቅርታ፣ አሁን መመለስ አልቻልኩም። እባክዎ ቆይተው ይሞክሩ።"
+            with st.spinner("መልስ እያዘጋጀሁ ነው..."):
+                answer, error_detail = groq_reply(st.session_state.chat_messages)
             st.markdown(answer)
+            if error_detail:
+                st.error("የቴክኒክ ስህተት ተፈጥሯል።")
+                with st.expander("የስህተት ዝርዝር / Error details"):
+                    st.code(error_detail)
         st.session_state.chat_messages.append({"role": "assistant", "content": answer})
 
     if len(st.session_state.chat_messages) > 1 and st.button("ውይይቱን አጽዳ", key="clear-chat"):
@@ -984,26 +1414,39 @@ def render_chat() -> None:
 def main() -> None:
     inject_styles()
     render_brand_header()
-    home_tab, gallery_tab, order_tab, chat_tab, admin_tab = st.tabs(
-        [
-            "መነሻ · Home",
-            "ማዕከለ-ስዕል · Gallery",
-            "ትዕዛዝ · Order",
-            "AI ረዳት · Chat",
-            "Admin · አስተዳደር",
-        ]
+
+    configured_admin_key = os.getenv("ADMIN_URL_KEY", "")
+    provided_admin_key = st.query_params.get(ADMIN_URL_PARAM, "")
+    show_admin_tab = bool(configured_admin_key) and hmac.compare_digest(
+        provided_admin_key, configured_admin_key
     )
+
+    tab_labels = [
+        "መነሻ · Home",
+        "ማዕከለ-ስዕል · Gallery",
+        "ስለ እኛ · About",
+        "ትዕዛዝ · Order",
+        "AI ረዳት · Chat",
+    ]
+    if show_admin_tab:
+        tab_labels.append("Admin · አስተዳደር")
+
+    tabs = st.tabs(tab_labels)
+    home_tab, gallery_tab, about_tab, order_tab, chat_tab = tabs[:5]
 
     with home_tab:
         render_home()
     with gallery_tab:
         render_gallery()
+    with about_tab:
+        render_about()
     with order_tab:
         render_order()
     with chat_tab:
         render_chat()
-    with admin_tab:
-        render_admin()
+    if show_admin_tab:
+        with tabs[5]:
+            render_admin()
 
     st.markdown(
         '<div class="footer">ቅርስ ቤት · የኢትዮጵያ ባህልን ከልብ ጋር እናካፍላለን</div>',
