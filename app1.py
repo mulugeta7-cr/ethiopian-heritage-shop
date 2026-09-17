@@ -29,18 +29,18 @@ INK = "#18322B"
 CREAM = "#FBF8F1"
 GROQ_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_ORDER_ITEMS = [
-    {"category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000},
-    {"category": "ልብስ", "name": "የልጆች ባህላዊ ልብስ", "price": 1800},
-    {"category": "ምግብ", "name": "ዶሮ ወጥ ከእንጀራ ጋር", "price": 450},
+    {"category": "ልብስ", "name": "የወንዶች ባህላዊ ልብስ ", "price": 4000},
+    
+    {"category": "ምግብ", "name": "ዶሮ ብጩምቦ ", "price": 450},
     {"category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950},
 ]
 HOME_DEFAULTS: dict[str, str] = {
-    "hero_ribbon": "Ethiopian heritage · made with care",
-    "hero_title": "የኢትዮጵያ ቅርስ<br>በአንድ ቦታ",
+    "hero_ribbon": "Ethiopian shinasha heritage · made with care",
+    "hero_title": "ኖካ <br>በአንድ ቦታ",
     "hero_body": (
         "በባህላዊ ልብስ እና በጣፋጭ የኢትዮጵያ ምግቦች የቤተሰብ ትውስታዎችን "
         "እንፈጥራለን። ከእጅ የተሰሩ የባህል ልብሶችን እና በፍቅር የተዘጋጁ "
-        "ምግቦችን ያግኙ። ባህላችንን ከእርስዎ ጋር ማካፈል ደስታችን ነው።"
+        "ምግቦችን ያግኙ። ባህላችንን ከእርስዎ ጋር መካፈል ደስታችን ነው።"
     ),
     "promise_title": "ባህል በጥራት እና በሙቀት",
     "promise_body": "እያንዳንዱ የምንመርጠው ልብስ እና የምናዘጋጀው ምግብ የኢትዮጵያን ታሪክ ይይዛል።",
@@ -1016,12 +1016,12 @@ def render_admin_dashboard() -> None:
 
 def render_ai_assistant() -> None:
     st.markdown('<div class="eyebrow">AI Assistant · AI ረዳት</div>', unsafe_allow_html=True)
-    st.markdown("<h2>የቅርስ ቤት AI ረዳት</h2>", unsafe_allow_html=True)
+    st.markdown("<h2>የኖካ AI ረዳት</h2>", unsafe_allow_html=True)
     st.caption("ስለ ምርቶቻችን፣ ዋጋዎች ወይም አጠቃላይ መረጃዎችን መጠየቅ ይችላሉ።")
 
     if "messages" not in st.session_state:
         st.session_state.messages = [
-            {"role": "assistant", "content": "ሰላም! እንኳን ወደ ቅርስ ቤት በደህና መጡ። ምን ልረዳዎት?"}
+            {"role": "assistant", "content": "ሰላም! እንኳን ወደ ኖካ  በደህና መጡ። ምን ልረዳዎት?"}
         ]
 
     for message in st.session_state.messages:
