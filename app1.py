@@ -727,84 +727,6 @@ def render_home() -> None:
                 _render_order_now(item, key_prefix="home")
 
 
-def render_gallery() -> None:
-    st.markdown('<div class="eyebrow">Shop & Gallery · ሱቅ እና ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-intro"><h2>ምርቶቻችንን ይመልከቱ</h2>'
-        "<p>የልብስ እና የምግብ ምርቶችን ከዋጋቸው ጋር ይመልከቱ። የተጨመሩ ምርቶች እዚህ በቀጥታ ይታያሉ።</p></div>",
-        unsafe_allow_html=True,
-    )
-    catalog_items = read_store()["items"]
-    catalog_filter = st.selectbox("የምርት ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"], key="shop_category")
-    visible_catalog = [
-        item for item in catalog_items if catalog_filter == "ሁሉም" or item["category"] == catalog_filter
-    ]
-    if not visible_catalog:
-        st.info("በዚህ ዓይነት የተመዘገበ ምርት የለም።")
-    else:
-        product_columns = st.columns(min(3, len(visible_catalog)))
-        for index, item in enumerate(visible_catalog):
-            with product_columns[index % len(product_columns)]:
-                photo_path = _product_photo_path(item.get("photo_filename", ""))
-                if photo_path:
-                    st.image(str(photo_path), use_container_width=True)
-                else:
-                    st.markdown(
-                        '<div class="gallery-empty" style="padding:3.5rem 1rem;">'
-                        "ምስል አልተጫነም</div>",
-                        unsafe_allow_html=True,
-                    )
-                st.subheader(item["name"])
-                st.caption(item["category"])
-                st.markdown(
-                    f'<span class="price-pill">{item["price"]:,} ብር</span>',
-                    unsafe_allow_html=True,
-                )
-                _render_order_now(item, key_prefix="gallery")
-
-    st.markdown('<div class="eyebrow">Community gallery · የማህበረሰብ ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
-    st.markdown(
-        "<p>የራስዎን የልብስ ወይም የምግብ ምስሎች በዚህ ጉብኝት ውስጥ ለማሳየት ይጫኑ።</p>",
-        unsafe_allow_html=True,
-    )
-    upload_col, filter_col = st.columns([2, 1])
-    with upload_col:
-        uploads = st.file_uploader(
-            "ምስሎችን ይምረጡ",
-            type=["png", "jpg", "jpeg", "webp"],
-            accept_multiple_files=True,
-            help="PNG, JPG ወይም WEBP ምስሎችን መምረጥ ይችላሉ።",
-        )
-    with filter_col:
-        category = st.selectbox("ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"])
-
-    if uploads:
-        st.session_state.gallery_images = [
-            {
-                "name": item.name,
-                "bytes": item.getvalue(),
-                "category": "ልብስ" if "dress" in item.name.lower() or "cloth" in item.name.lower() else "ምግብ",
-            }
-            for item in uploads
-        ]
-
-    gallery_images = st.session_state.get("gallery_images", [])
-    visible_images = [
-        image for image in gallery_images if category == "ሁሉም" or image["category"] == category
-    ]
-
-    if not visible_images:
-        st.markdown(
-            '<div class="gallery-empty">ምስሎች እስካሁን አልተጫኑም። የመጀመሪያውን የቅርስ ምስል ያካፍሉ።</div>',
-            unsafe_allow_html=True,
-        )
-        return
-
-    columns = st.columns(min(3, len(visible_images)))
-    for index, image in enumerate(visible_images):
-        with columns[index % len(columns)]:
-            st.image(image["bytes"], use_container_width=True)
-            st.caption(f"{image['category']} · {image['name']}")
 
 
 def render_about() -> None:
@@ -1298,7 +1220,7 @@ def groq_reply(messages: list[dict[str, str]]) -> tuple[str, str | None]:
     system_message = {
         "role": "system",
         "content": (
-            "እርስዎ የቅርስ ቤት የደንበኛ ረዳት ነዎት። ሁልጊዜ በአማርኛ ብቻ "
+            "እርስዎ ኖካ የደንበኛ ረዳት ነዎት። ሁልጊዜ በአማርኛ ብቻ "
             "በትህትና፣ በግልጽነት እና በአጭር ይመልሱ። ዋጋ የሌለውን ነገር "
             "አትገምቱ፤ ከዚህ የንግድ መረጃ ውጭ ከሆነ ደንበኛው በቀጥታ እንዲጠይቅ "
             "ይጋብዙት። ትዕዛዝ ለመስጠት የሚፈለገውን ዕቃ፣ መጠን/ብዛት፣ አድራሻ "
@@ -1449,7 +1371,7 @@ def main() -> None:
             render_admin()
 
     st.markdown(
-        '<div class="footer">ቅርስ ቤት · የኢትዮጵያ ባህልን ከልብ ጋር እናካፍላለን</div>',
+        '<div class="footer">ኖካ · የኢትዮጵያ ባህልን ከልብ ጋር እናካፍላለን</div>',
         unsafe_allow_html=True,
     )
 
