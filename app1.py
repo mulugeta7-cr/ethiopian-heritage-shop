@@ -29,18 +29,18 @@ INK = "#18322B"
 CREAM = "#FBF8F1"
 GROQ_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_ORDER_ITEMS = [
-    {"category": "ልብስ", "name": "የወንዶች ባህላዊ ልብስ ", "price": 4000},
-    
-    {"category": "ምግብ", "name": "ዶሮ ብጩምቦ ", "price": 450},
+    {"category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000},
+    {"category": "ልብስ", "name": "የልጆች ባህላዊ ልብስ", "price": 1800},
+    {"category": "ምግብ", "name": "ዶሮ ወጥ ከእንጀራ ጋር", "price": 450},
     {"category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950},
 ]
 HOME_DEFAULTS: dict[str, str] = {
-    "hero_ribbon": "Ethiopian shinasha heritage · made with care",
-    "hero_title": "ኖካ <br>በአንድ ቦታ",
+    "hero_ribbon": "Ethiopian heritage · made with care",
+    "hero_title": "የኢትዮጵያ ቅርስ<br>በአንድ ቦታ",
     "hero_body": (
         "በባህላዊ ልብስ እና በጣፋጭ የኢትዮጵያ ምግቦች የቤተሰብ ትውስታዎችን "
         "እንፈጥራለን። ከእጅ የተሰሩ የባህል ልብሶችን እና በፍቅር የተዘጋጁ "
-        "ምግቦችን ያግኙ። ባህላችንን ከእርስዎ ጋር መካፈል ደስታችን ነው።"
+        "ምግቦችን ያግኙ። ባህላችንን ከእርስዎ ጋር ማካፈል ደስታችን ነው።"
     ),
     "promise_title": "ባህል በጥራት እና በሙቀት",
     "promise_body": "እያንዳንዱ የምንመርጠው ልብስ እና የምናዘጋጀው ምግብ የኢትዮጵያን ታሪክ ይይዛል።",
@@ -49,7 +49,7 @@ HOME_DEFAULTS: dict[str, str] = {
 ABOUT_DEFAULTS: dict[str, str] = {
     "title": "ስለ እኛ · About Us",
     "body": (
-        "ቅርስ ቤት የተመሰረተው የኢትዮጵያን ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ "
+        "ኖካ / NOOKA የተመሰረተው የኢትዮጵያን ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ "
         "ለማድረስ ነው። እያንዳንዱ ምርት በጥንቃቄ እና በፍቅር የተዘጋጀ ነው። "
         "አላማችን ደንበኞቻችን የኢትዮጵያን ባህል በቀላሉ እንዲያገኙ ማድረግ ነው።"
     ),
@@ -608,7 +608,7 @@ def render_brand_header() -> None:
         """
         <div class="brand-mark">
             <span class="brand-symbol">✦</span>
-            <span>ቅርስ ቤት <span style="opacity:.55;">/</span> Qirss Bet</span>
+            <span>ኖካ <span style="opacity:.55;">/</span> NOOKA</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -964,114 +964,3 @@ def render_admin_dashboard() -> None:
     st.markdown('<div class="eyebrow">Catalog · ምናሌ</div>', unsafe_allow_html=True)
     st.markdown("<h2>ልብስ እና ምግብ ማስተካከያ</h2>", unsafe_allow_html=True)
     st.caption("እዚህ የሚደረጉ የምርት እና ዋጋ ለውጦች በደንበኛው የትዕዛዝ ገጽ እና AI ረዳት ላይ ይታያሉ።")
-    add_col, edit_col = st.columns(2)
-    with add_col:
-        with st.form("admin_add_item"):
-            st.markdown("**አዲስ ምርት ጨምር**")
-            new_category = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"], key="add_item_category")
-            new_name = st.text_input("የምርት ስም", key="add_item_name")
-            new_price = st.number_input("ዋጋ (በብር)", min_value=0, value=1000, step=50, key="add_item_price")
-            uploaded_photo = st.file_uploader("ምስል (አማራጭ)", type=["png", "jpg", "jpeg", "webp"], key="add_item_photo")
-            submit_add = st.form_submit_button("ምርት መዝግብ", use_container_width=True)
-
-        if submit_add:
-            if not new_name.strip():
-                st.error("እባክዎ የምርት ስም ያስገቡ።")
-            else:
-                photo_filename = ""
-                if uploaded_photo:
-                    try:
-                        photo_filename = _save_product_photo(uploaded_photo.getvalue(), uploaded_photo.name)
-                    except ValueError as err:
-                        st.error(str(err))
-                add_catalog_item(new_category, new_name.strip(), int(new_price), photo_filename)
-                st.session_state.admin_notice = f"'{new_name.strip()}' በተሳካ ሁኔታ ተመዝግቧል።"
-                st.rerun()
-
-    with edit_col:
-        if items:
-            st.markdown("**ምርት አስተካክል / ሰርዝ**")
-            selected_item = st.selectbox(
-                "የሚስተካከለውን ምርት ይምረጡ",
-                items,
-                format_func=lambda x: f"{x['name']} ({x['category']}) - {x['price']} ብር",
-                key="admin_select_edit_item"
-            )
-            with st.form(f"admin_edit_item_{selected_item['id']}"):
-                edit_category = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"], index=0 if selected_item['category'] == "ልብስ" else 1)
-                edit_name = st.text_input("የምርት ስም", value=selected_item['name'])
-                edit_price = st.number_input("ዋጋ (በብር)", min_value=0, value=int(selected_item['price']), step=50)
-                submit_edit = st.form_submit_button("አዘምን", use_container_width=True)
-
-            if submit_edit:
-                edit_catalog_item(selected_item['id'], edit_category, edit_name.strip(), int(edit_price))
-                st.session_state.admin_notice = f"'{edit_name.strip()}' ተዘምኗል።"
-                st.rerun()
-
-            if st.button("ምርቱን ሰርዝ", key=f"delete_{selected_item['id']}", use_container_width=True):
-                delete_catalog_item(selected_item['id'])
-                st.session_state.admin_notice = "ምርቱ ተሰርዟል።"
-                st.rerun()
-
-
-def render_ai_assistant() -> None:
-    st.markdown('<div class="eyebrow">AI Assistant · AI ረዳት</div>', unsafe_allow_html=True)
-    st.markdown("<h2>የኖካ AI ረዳት</h2>", unsafe_allow_html=True)
-    st.caption("ስለ ምርቶቻችን፣ ዋጋዎች ወይም አጠቃላይ መረጃዎችን መጠየቅ ይችላሉ።")
-
-    if "messages" not in st.session_state:
-        st.session_state.messages = [
-            {"role": "assistant", "content": "ሰላም! እንኳን ወደ ኖካ  በደህና መጡ። ምን ልረዳዎት?"}
-        ]
-
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.write(message["content"])
-
-    if user_prompt := st.chat_input("ጥያቄዎን እዚህ ይጻፉ..."):
-        st.session_state.messages.append({"role": "user", "content": user_prompt})
-        with st.chat_message("user"):
-            st.write(user_prompt)
-
-        store_data = read_store()
-        response_text = f"ስለ ጥያቄዎ አመሰግናለሁ! በአሁኑ ጊዜ የሚከተሉት ምርቶች አለን፦\n"
-        for item in store_data["items"]:
-            response_text += f"- {item['name']} ({item['category']}): {item['price']:,} ብር\n"
-
-        with st.chat_message("assistant"):
-            st.write(response_text)
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
-
-
-def main() -> None:
-    inject_styles()
-    render_brand_header()
-
-    query_params = st.query_params
-    is_admin = query_params.get(ADMIN_URL_PARAM) == "true"
-
-    if is_admin:
-        tabs = st.tabs(["መነሻ (Home)", "ሱቅ (Gallery)", "ስለ እኛ (About)", "ትዕዛዝ (Order)", "AI ረዳት", "አድሚን (Admin)"])
-    else:
-        tabs = st.tabs(["መነሻ (Home)", "ሱቅ (Gallery)", "ስለ እኛ (About)", "ትዕዛዝ (Order)", "AI ረዳት"])
-
-    with tabs[0]:
-        render_home()
-    with tabs[1]:
-        render_gallery()
-    with tabs[2]:
-        render_about()
-    with tabs[3]:
-        render_order()
-    with tabs[4]:
-        render_ai_assistant()
-
-    if is_admin and len(tabs) > 5:
-        with tabs[5]:
-            render_admin_dashboard()
-
-    st.markdown('<div class="footer">© 2026 NOOKA - . ሁሉም መብቱ በህግ የተጠበቀ ነው።</div>', unsafe_allow_html=True)
-
-
-if __name__ == "__main__":
-    main()
