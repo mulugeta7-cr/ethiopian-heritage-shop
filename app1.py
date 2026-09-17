@@ -30,8 +30,8 @@ CREAM = "#FBF8F1"
 GROQ_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_ORDER_ITEMS = [
     {"category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000},
-    {"category": "ልብስ", "name": "የልጆች ባህላዊ ልብስ", "price": 1800},
-    {"category": "ምግብ", "name": "ዶሮ ወጥ ከእንጀራ ጋር", "price": 450},
+    {"category": "ልብስ", "name": "የሴቶች ባህላዊ ልብስ", "price": 1800},
+    {"category": "ምግብ", "name": "ዶሮ በጩንምቦ ", "price": 450},
     {"category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950},
 ]
 HOME_DEFAULTS: dict[str, str] = {
