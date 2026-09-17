@@ -31,7 +31,7 @@ GROQ_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_ORDER_ITEMS = [
     {"category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000},
     {"category": "ልብስ", "name": "የሴቶች ባህላዊ ልብስ", "price": 1800},
-    {"category": "ምግብ", "name": "ዶሮ በጩንምቦ ", "price": 450},
+    {"category": "ምግብ", "name": "ዶሮ በ ሺናሻ ጩቦ  ", "price": 450},
     {"category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950},
 ]
 HOME_DEFAULTS: dict[str, str] = {
@@ -198,12 +198,30 @@ def update_order_status(order_number: str, status: str) -> bool:
     return update_store(mutate)
 
 
+def _save_product_photo(photo_bytes: bytes, original_name: str) -> str:
+    suffix = Path(original_name).suffix.lower()
+    if suffix not in ALLOWED_PHOTO_SUFFIXES:
+        raise ValueError("Only PNG, JPG, JPEG, and WEBP product photos are supported.")
+    PHOTO_DIR.mkdir(parents=True, exist_ok=True)
+    filename = f"{uuid4().hex}{suffix}"
+    temporary_path = PHOTO_DIR / f"{filename}.tmp"
+    temporary_path.write_bytes(photo_bytes)
+    temporary_path.replace(PHOTO_DIR / filename)
+    return filename
+
+
 def _product_photo_path(filename: str) -> Path | None:
     if not filename:
         return None
     safe_filename = Path(filename).name
     photo_path = PHOTO_DIR / safe_filename
     return photo_path if photo_path.exists() else None
+
+
+def _remove_product_photo(filename: str) -> None:
+    photo_path = _product_photo_path(filename)
+    if photo_path:
+        photo_path.unlink(missing_ok=True)
 
 
 def inject_styles() -> None:
@@ -227,6 +245,14 @@ def inject_styles() -> None:
             color: var(--ink);
         }}
 
+        [data-testid="stHeader"] {{
+            background: rgba(255, 253, 248, .84);
+        }}
+
+        [data-testid="stDecoration"] {{
+            background-image: linear-gradient(90deg, var(--green) 0 33%, var(--yellow) 33% 66%, var(--red) 66% 100%);
+        }}
+
         .block-container {{
             max-width: 1180px;
             padding-top: 2.5rem;
@@ -244,6 +270,7 @@ def inject_styles() -> None:
             color: var(--ink);
             font-size: 1.15rem;
             font-weight: 800;
+            letter-spacing: .02em;
         }}
 
         .brand-symbol {{
@@ -255,20 +282,92 @@ def inject_styles() -> None:
             border-radius: .8rem;
             color: #fffdf8;
             background: conic-gradient(from 210deg, var(--green), var(--yellow), var(--red), var(--green));
+            box-shadow: 0 8px 22px rgba(24, 50, 43, .16);
+        }}
+
+        .eyebrow {{
+            display: inline-block;
+            margin: 1.6rem 0 .7rem;
+            color: var(--green);
+            font-size: .78rem;
+            font-weight: 800;
+            letter-spacing: .14em;
+            text-transform: uppercase;
         }}
 
         .hero {{
             position: relative;
             overflow: hidden;
             margin: 1.2rem 0 2.2rem;
-            padding: 3rem;
+            padding: clamp(2rem, 5vw, 4.5rem);
+            border: 1px solid rgba(24, 50, 43, .1);
             border-radius: 2rem;
-            background: linear-gradient(120deg, rgba(22, 132, 74, .96), rgba(24, 50, 43, .94));
+            background:
+                linear-gradient(120deg, rgba(22, 132, 74, .96), rgba(24, 50, 43, .94)),
+                var(--green);
+            box-shadow: 0 18px 55px rgba(24, 50, 43, .16);
+        }}
+
+        .hero h1 {{
+            margin: 0;
             color: #fffdf8;
+            font-size: clamp(2rem, 5vw, 4.5rem);
+            line-height: 1.12;
+        }}
+
+        .hero p {{
+            max-width: 44rem;
+            margin: 1.2rem 0 0;
+            color: rgba(255, 253, 248, .86);
+            font-size: clamp(1rem, 2vw, 1.22rem);
+            line-height: 1.9;
+        }}
+
+        .hero-ribbon {{
+            display: inline-flex;
+            margin-bottom: 1.3rem;
+            padding: .42rem .75rem;
+            border: 1px solid rgba(255, 253, 248, .25);
+            border-radius: 999px;
+            color: var(--yellow);
+            font-size: .78rem;
+            font-weight: 800;
+            letter-spacing: .12em;
+            text-transform: uppercase;
+        }}
+
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: .45rem;
+            padding: .35rem;
+            border: 1px solid rgba(24, 50, 43, .1);
+            border-radius: 1rem;
+            background: rgba(255, 253, 248, .82);
+        }}
+
+        .stTabs [data-baseweb="tab"] {{
+            height: 3rem;
+            padding: 0 1.15rem;
+            border-radius: .7rem;
+            color: rgba(24, 50, 43, .7);
+            font-weight: 700;
+        }}
+
+        .stTabs [aria-selected="true"] {{
+            background: var(--ink);
+            color: #fffdf8;
+        }}
+
+        .stButton > button {{
+            border: 0;
+            border-radius: .75rem;
+            background: var(--green);
+            color: #fffdf8;
+            font-weight: 700;
         }}
 
         .price-pill {{
             display: inline-block;
+            margin-top: .55rem;
             padding: .25rem .6rem;
             border-radius: 999px;
             background: rgba(22, 132, 74, .1);
@@ -294,43 +393,15 @@ def render_brand_header() -> None:
     )
 
 
-def _render_order_now(item: dict[str, Any], key_prefix: str) -> None:
-    with st.expander("ይዘዙ · Order Now"):
-        with st.form(f"{key_prefix}_order_{item['id']}"):
-            quantity = st.number_input(
-                "ብዛት", min_value=1, max_value=50, value=1, step=1,
-                key=f"{key_prefix}_qty_{item['id']}",
-            )
-            name = st.text_input("ሙሉ ስም", key=f"{key_prefix}_name_{item['id']}")
-            phone = st.text_input("ስልክ ቁጥር", key=f"{key_prefix}_phone_{item['id']}")
-            submit = st.form_submit_button("ትዕዛዝ ላክ", use_container_width=True)
-        if submit:
-            clean_name = name.strip()
-            clean_phone = phone.strip()
-            if not clean_name or not clean_phone:
-                st.error("እባክዎ ሙሉ ስምዎን እና ስልክ ቁጥርዎን ያስገቡ።")
-            else:
-                order = add_order(
-                    {
-                        "item": item["name"],
-                        "category": item["category"],
-                        "quantity": int(quantity),
-                        "total": int(item["price"]) * int(quantity),
-                        "name": clean_name,
-                        "phone": clean_phone,
-                    }
-                )
-                st.success(f"ትዕዛዝዎ ተልኳል! የትዕዛዝ ቁጥርዎ፦ {order['number']}")
-
-
 def render_home() -> None:
     home = read_store().get("home", dict(HOME_DEFAULTS))
+
     st.markdown(
         f"""
         <div class="hero">
             <div class="hero-content">
-                <div style="color:var(--yellow); text-transform:uppercase; font-weight:bold;">{home['hero_ribbon']}</div>
-                <h1 style="color:#fff;">{home['hero_title']}</h1>
+                <div class="hero-ribbon">{home['hero_ribbon']}</div>
+                <h1>{home['hero_title']}</h1>
                 <p>{home['hero_body']}</p>
             </div>
         </div>
@@ -338,53 +409,101 @@ def render_home() -> None:
         unsafe_allow_html=True,
     )
 
+    st.markdown('<div class="eyebrow">Featured Products · ተወዳጅ ምርቶች</div>', unsafe_allow_html=True)
     catalog_items = read_store()["items"]
     if catalog_items:
-        st.subheader("ተወዳጅ ምርቶች")
-        featured = catalog_items[:3]
-        featured_columns = st.columns(len(featured))
-        for column, item in zip(featured_columns, featured):
-            with column:
-                st.markdown(f"### {item['name']}")
+        cols = st.columns(min(3, len(catalog_items)))
+        for idx, item in enumerate(catalog_items[:3]):
+            with cols[idx % len(cols)]:
+                st.subheader(item["name"])
+                st.caption(f"ዓይነት፦ {item['category']}")
                 st.markdown(f'<span class="price-pill">{item["price"]:,} ብር</span>', unsafe_allow_html=True)
-                _render_order_now(item, key_prefix="home")
 
 
-def render_gallery() -> None:
-    st.subheader("ምርቶቻችንን ይመልከቱ")
+def render_order() -> None:
+    st.markdown('<div class="eyebrow">Order · ትዕዛዝ</div>', unsafe_allow_html=True)
+    st.markdown("<h2>ትዕዛዝዎን ያስገቡ</h2>", unsafe_allow_html=True)
+
     catalog_items = read_store()["items"]
-    catalog_filter = st.selectbox("የምርት ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"], key="shop_category")
-    visible_catalog = [
-        item for item in catalog_items if catalog_filter == "ሁሉም" or item["category"] == catalog_filter
-    ]
-    if not visible_catalog:
-        st.info("በዚህ ዓይነት የተመዘገበ ምርት የለም።")
-    else:
-        product_columns = st.columns(min(3, len(visible_catalog)))
-        for index, item in enumerate(visible_catalog):
-            with product_columns[index % len(product_columns)]:
-                st.markdown(f"### {item['name']}")
-                st.caption(item["category"])
-                st.markdown(f'<span class="price-pill">{item["price"]:,} ብር</span>', unsafe_allow_html=True)
-                _render_order_now(item, key_prefix="gallery")
+    if not catalog_items:
+        st.warning("ምንም ምርት አልተገኘም።")
+        return
+
+    with st.form("order_form"):
+        item = st.selectbox(
+            "ምርት ይምረጡ",
+            catalog_items,
+            format_func=lambda x: f"{x['name']} - {x['price']:,} ብር",
+        )
+        quantity = st.number_input("ብዛት", min_value=1, value=1)
+        name = st.text_input("ሙሉ ስም")
+        phone = st.text_input("ስልክ ቁጥር")
+        submit = st.form_submit_button("ትዕዛዝ ላክ", use_container_width=True)
+
+    if submit:
+        if not name.strip() or not phone.strip():
+            st.error("እባክዎ ስምዎን እና ስልክ ቁጥርዎን ያስገቡ።")
+        else:
+            order = add_order({
+                "item": item["name"],
+                "category": item["category"],
+                "quantity": quantity,
+                "total": item["price"] * quantity,
+                "name": name.strip(),
+                "phone": phone.strip(),
+            })
+            st.success(f"ትዕዛዝዎ ተልኳል! የትዕዛዝ ቁጥርዎ፦ {order['number']}")
+
+
+def render_chatbot() -> None:
+    st.markdown('<div class="eyebrow">AI Assistant · የደንበኞች ረዳት</div>', unsafe_allow_html=True)
+    st.markdown("<h2>ስለ ኖካ / NOOKA ምርቶች ይጠይቁ</h2>", unsafe_allow_html=True)
+
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history = [
+            {"role": "assistant", "content": "ሰላም! ኖካ (NOOKA) እንኳን ደህና መጡ። ስለ ባህላዊ ልብሶቻችን እና ምግቦቻችን ምን ማወቅ ይፈልጋሉ?"}
+        ]
+
+    for msg in st.session_state.chat_history:
+        st.chat_message(msg["role"]).write(msg["content"])
+
+    if user_input := st.chat_input("ጥያቄዎን እዚህ ያስገቡ..."):
+        st.session_state.chat_history.append({"role": "user", "content": user_input})
+        st.chat_message("user").write(user_input)
+
+        # AI Response Generation (Simple Logic / API Integration Space)
+        store = read_store()
+        items_summary = ", ".join([f"{item['name']} ({item['price']} ብር)" for item in store["items"]])
+        
+        reply = f"ስለ ጥያቄዎ እናመሰግናለን! በኖካ አሁን የሚገኙ ምርቶች፦ {items_summary} ናቸው። ለተጨማሪ ትዕዛዝ 'ትዕዛዝ' የሚለውን ገጽ ይመልከቱ።"
+        
+        st.session_state.chat_history.append({"role": "assistant", "content": reply})
+        st.chat_message("assistant").write(reply)
 
 
 def render_about() -> None:
     about = read_store().get("about", dict(ABOUT_DEFAULTS))
-    st.title(about['title'])
-    st.write(about['body'])
+    st.markdown('<div class="eyebrow">About · ስለ እኛ</div>', unsafe_allow_html=True)
+    st.markdown(f"<h1>{about['title']}</h1>", unsafe_allow_html=True)
+    st.markdown(f"<p style='white-space:pre-line;'>{about['body']}</p>", unsafe_allow_html=True)
 
 
 def main() -> None:
     inject_styles()
     render_brand_header()
 
-    tabs = st.tabs(["መነሻ (Home)", "ሱቅ (Gallery)", "ስለ እኛ (About)"])
-    with tabs[0]:
+    # የተስተካከለው የNavigation Tabs ዝርዝር (ጋላሪ ተወግዶ AI Chatbot ገብቷል)
+    tab_home, tab_order, tab_chatbot, tab_about = st.tabs(
+        ["መነሻ ገጽ (Home)", "ትዕዛዝ (Order)", "AI Chatbot", "ስለ እኛ (About)"]
+    )
+
+    with tab_home:
         render_home()
-    with tabs[1]:
-        render_gallery()
-    with tabs[2]:
+    with tab_order:
+        render_order()
+    with tab_chatbot:
+        render_chatbot()
+    with tab_about:
         render_about()
 
 
