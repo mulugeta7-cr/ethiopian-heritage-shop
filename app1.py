@@ -23,32 +23,29 @@ INK = "#18322B"
 CREAM = "#FBF8F1"
 
 DEFAULT_ORDER_ITEMS = [
-    {"category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000},
-    {"category": "ልብስ", "name": "የሴቶች  ባህላዊ ልብስ", "price": 1800},
-    {"category": "ምግብ", "name": "ዶሮ በ ሺናሻ ጩምቦ ተከሽኖ ", "price": 4500},
-    {"category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950},
+    {"id": "default-1", "category": "ልብስ", "name": "የወንዶች ባህላዊ ልብስ ", "price": 4000, "photo_filename": ""},
+    {"id": "default-2", "category": "ልብስ", "name": "የሴቶች ባህላዊ ልብስ", "price": 1800, "photo_filename": ""},
+    {"id": "default-3", "category": "ምግብ", "name": "ዶሮ በጩቦ ", "price": 450, "photo_filename": ""},
+    {"id": "default-4", "category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950, "photo_filename": ""},
 ]
 
-HOME_DEFAULTS: dict[str, str] = {
+HOME_DEFAULTS = {
     "hero_ribbon": "Ethiopian heritage · made with care",
     "hero_title": "የኢትዮጵያ ቅርስ<br>በአንድ ቦታ",
-    "hero_body": (
-        "በባህላዊ ልብስ እና በጣፋጭ የኢትዮጵያ ምግቦች የቤተሰብ ትውስታዎችን "
-        "እንፈጥራለን። ከእጅ የተሰሩ የባህል ልብሶችን እና በፍቅር የተዘጋጁ "
-        "ምግቦችን ያግኙ።"
-    ),
+    "hero_body": "በባህላዊ ልብስ እና በጣፋጭ የኢትዮጵያ ምግቦች የቤተሰብ ትውስታዎችን እንፈጥራለን። ከእጅ የተሰሩ የባህል ልብሶችን እና በፍቅር የተዘጋጁ ምግቦችን ያግኙ።",
 }
 
-ABOUT_DEFAULTS: dict[str, str] = {
+ABOUT_DEFAULTS = {
     "title": "ስለ እኛ · About Us",
-    "body": (
-        "ኖካ / NOOKA የተመሰረተው የኢትዮጵያን ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ "
-        "ለማድረስ ነው። እያንዳንዱ ምርት በጥንቃቄ እና በፍቅር የተዘጋጀ ነው።"
-    ),
+    "body": "ኖካ / NOOKA የተመሰረተው የኢትዮጵያን ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ ለማድረስ ነው። እያንዳንዱ ምርት በጥንቃቄ እና በፍቅር የተዘጋጀ ነው።",
+}
+
+CHATBOT_DEFAULTS = {
+    "system_instruction": "ሰላም! ኖካ (NOOKA) እንኳን ደህና መጡ። ስለ ባህላዊ ልብሶቻችን እና ምግቦቻችን ምን ማወቅ ይፈልጋሉ?"
 }
 
 ADMIN_URL_PARAM = "admin_key"
-ADMIN_SECRET_PASS = "nooka2026"  # የአድሚን መግቢያ ሚስጥር ቁጥር
+ADMIN_SECRET_PASS = "nooka2026"  # የአድሚን መግቢያ ሚስጥር ቁጥር/ፓስወርድ
 
 STORE_PATH = Path(__file__).with_name("storefront_data.json")
 PHOTO_DIR = Path(__file__).with_name("product_photos")
@@ -57,13 +54,11 @@ STORE_LOCK = Lock()
 
 def _default_store() -> dict[str, Any]:
     return {
-        "items": [
-            {**item, "id": f"default-{index + 1}", "photo_filename": ""}
-            for index, item in enumerate(DEFAULT_ORDER_ITEMS)
-        ],
+        "items": list(DEFAULT_ORDER_ITEMS),
         "orders": [],
         "home": dict(HOME_DEFAULTS),
         "about": dict(ABOUT_DEFAULTS),
+        "chatbot": dict(CHATBOT_DEFAULTS),
     }
 
 
@@ -79,10 +74,11 @@ def _read_store_unlocked() -> dict[str, Any]:
         return _default_store()
 
     return {
-        "items": data.get("items", _default_store()["items"]),
+        "items": data.get("items", list(DEFAULT_ORDER_ITEMS)),
         "orders": data.get("orders", []),
         "home": data.get("home", dict(HOME_DEFAULTS)),
         "about": data.get("about", dict(ABOUT_DEFAULTS)),
+        "chatbot": data.get("chatbot", dict(CHATBOT_DEFAULTS)),
     }
 
 
@@ -119,28 +115,47 @@ def add_order(order: dict[str, Any]) -> dict[str, Any]:
     return update_store(mutate)
 
 
-def update_order_status(order_number: str, status: str) -> bool:
-    def mutate(store: dict[str, Any]) -> bool:
+def update_order_status(order_number: str, status: str) -> None:
+    def mutate(store: dict[str, Any]) -> None:
         for order in store["orders"]:
             if order.get("number") == order_number:
                 order["status"] = status
-                return True
-        return False
 
-    return update_store(mutate)
+    update_store(mutate)
 
 
-def add_catalog_item(category: str, name: str, price: int, photo_filename: str = "") -> None:
+def save_product(item_id: str | None, category: str, name: str, price: int) -> None:
     def mutate(store: dict[str, Any]) -> None:
-        store["items"].append(
-            {
-                "id": f"product-{uuid4().hex}",
-                "category": category,
-                "name": name,
-                "price": price,
-                "photo_filename": photo_filename,
-            }
-        )
+        if item_id:
+            for item in store["items"]:
+                if item["id"] == item_id:
+                    item["category"] = category
+                    item["name"] = name
+                    item["price"] = price
+        else:
+            store["items"].append(
+                {
+                    "id": f"product-{uuid4().hex[:8]}",
+                    "category": category,
+                    "name": name,
+                    "price": price,
+                    "photo_filename": "",
+                }
+            )
+
+    update_store(mutate)
+
+
+def delete_product(item_id: str) -> None:
+    def mutate(store: dict[str, Any]) -> None:
+        store["items"] = [item for item in store["items"] if item["id"] != item_id]
+
+    update_store(mutate)
+
+
+def update_section_data(section_key: str, data: dict[str, str]) -> None:
+    def mutate(store: dict[str, Any]) -> None:
+        store[section_key] = data
 
     update_store(mutate)
 
@@ -292,7 +307,8 @@ def _render_order_form(item: dict[str, Any], key_prefix: str) -> None:
 
 
 def render_home() -> None:
-    home = read_store().get("home", dict(HOME_DEFAULTS))
+    store = read_store()
+    home = store.get("home", HOME_DEFAULTS)
 
     st.markdown(
         f"""
@@ -306,7 +322,7 @@ def render_home() -> None:
     )
 
     st.markdown('<div class="eyebrow">Products · ምርቶቻችን</div>', unsafe_allow_html=True)
-    catalog_items = read_store()["items"]
+    catalog_items = store.get("items", [])
 
     if catalog_items:
         cols = st.columns(min(3, len(catalog_items)))
@@ -333,12 +349,15 @@ def render_home() -> None:
 
 
 def render_chatbot() -> None:
+    store = read_store()
+    chatbot_config = store.get("chatbot", CHATBOT_DEFAULTS)
+    
     st.markdown('<div class="eyebrow">AI Assistant · የደንበኞች ረዳት</div>', unsafe_allow_html=True)
     st.markdown("<h2>ስለ ኖካ / NOOKA ምርቶች ይጠይቁ</h2>", unsafe_allow_html=True)
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [
-            {"role": "assistant", "content": "ሰላም! ኖካ (NOOKA) እንኳን ደህና መጡ። ስለ ባህላዊ ልብሶቻችን እና ምግቦቻችን ምን ማወቅ ይፈልጋሉ?"}
+            {"role": "assistant", "content": chatbot_config.get("system_instruction", CHATBOT_DEFAULTS["system_instruction"])}
         ]
 
     for msg in st.session_state.chat_history:
@@ -348,8 +367,7 @@ def render_chatbot() -> None:
         st.session_state.chat_history.append({"role": "user", "content": user_input})
         st.chat_message("user").write(user_input)
 
-        store = read_store()
-        items_summary = ", ".join([f"{item['name']} ({item['price']} ብር)" for item in store["items"]])
+        items_summary = ", ".join([f"{item['name']} ({item['price']} ብር)" for item in store.get("items", [])])
         reply = f"ስለ ጥያቄዎ እናመሰግናለን! በኖካ አሁን የሚገኙ ምርቶች፦ {items_summary} ናቸው።"
 
         st.session_state.chat_history.append({"role": "assistant", "content": reply})
@@ -357,84 +375,152 @@ def render_chatbot() -> None:
 
 
 def render_about() -> None:
-    about = read_store().get("about", dict(ABOUT_DEFAULTS))
+    about = read_store().get("about", ABOUT_DEFAULTS)
     st.markdown('<div class="eyebrow">About · ስለ እኛ</div>', unsafe_allow_html=True)
     st.markdown(f"<h1>{about.get('title', '')}</h1>", unsafe_allow_html=True)
     st.markdown(f"<p style='white-space:pre-line;'>{about.get('body', '')}</p>", unsafe_allow_html=True)
 
 
-# --- የአድሚን ዳሽቦርድ (ADMIN DASHBOARD) ---
+# --- 🛠️ FULL ADMIN DASHBOARD SYSTEM ---
 def render_admin_dashboard() -> None:
-    st.markdown('<div class="eyebrow">Admin Panel · የአድሚን መቆጣጠሪያ ገጽ</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">Admin Control Panel</div>', unsafe_allow_html=True)
     st.markdown("<h1>የኖካ (NOOKA) አስተዳዳሪ ገጽ</h1>", unsafe_allow_html=True)
 
-    store = read_store()
-    orders = store["orders"]
-    items = store["items"]
+    # 1. Password Verification Login
+    if "admin_authenticated" not in st.session_state:
+        st.session_state.admin_authenticated = False
 
-    # 1. የትዕዛዞች ማጠቃለያ (Metrics)
-    completed_count = sum(order.get("status") == "completed" for order in orders)
-    col1, col2, col3 = st.columns(3)
-    col1.metric("ጠቅላላ ትዕዛዞች", len(orders))
-    col2.metric("በመጠባበቅ ላይ", len(orders) - completed_count)
-    col3.metric("የተጠናቀቁ", completed_count)
-
-    st.divider()
-
-    # 2. የትዕዛዞች ዝርዝር (Orders List)
-    st.subheader("የደንበኞች ትዕዛዞች")
-    if not orders:
-        st.info("እስካሁን ምንም የተላከ ትዕዛዝ የለም።")
-    else:
-        for order in reversed(orders):
-            st.write(f"**ትዕዛዝ ቁጥር፦ {order['number']}** | **ምርት፦** {order['item']} ({order['quantity']} አቃ) | **ጠቅላላ፦** {order['total']:,} ብር")
-            st.caption(f"ደንበኛ፦ {order['name']} | ስልክ፦ {order['phone']} | ሁኔታ፦ {order.get('status', 'pending')}")
-            
-            # የትዕዛዝ ሁኔታ መቀየሪያ
-            c1, c2 = st.columns([1, 4])
-            with c1:
-                new_status = st.selectbox(
-                    "ሁኔታ ቀይር",
-                    ["pending", "completed"],
-                    index=0 if order.get("status") == "pending" else 1,
-                    key=f"status_{order['number']}"
-                )
-                if st.button("አዘምን", key=f"btn_{order['number']}"):
-                    update_order_status(order["number"], new_status)
-                    st.success("ሁኔታው ተዘምኗል!")
-                    st.rerun()
-            st.divider()
-
-    # 3. አዲስ ምርት መጨመሪያ (Add Product)
-    st.subheader("አዲስ ምርት መመዝገቢያ")
-    with st.form("add_product_form"):
-        p_name = st.text_input("የምርት ስም")
-        p_cat = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"])
-        p_price = st.number_input("ዋጋ (በብር)", min_value=0, step=50)
-        p_submit = st.form_submit_button("ምርት መዝግብ")
-
-        if p_submit:
-            if p_name.strip() and p_price > 0:
-                add_catalog_item(p_cat, p_name.strip(), int(p_price))
-                st.success(f"ምርት '{p_name}' ተመዝግቧል!")
+    if not st.session_state.admin_authenticated:
+        st.warning("🔒 ይህ ገጽ ለአስተዳዳሪዎች ብቻ የተፈቀደ ነው። እባክዎ ሚስጥር ፓስወርድዎን ያስገቡ።")
+        entered_pass = st.text_input("የአድሚን ፓስወርድ", type="password")
+        if st.button("ግባ (Login)"):
+            if entered_pass == ADMIN_SECRET_PASS:
+                st.session_state.admin_authenticated = True
+                st.success("በተካከለ ገብተዋል!")
                 st.rerun()
             else:
-                st.error("እባክዎ ትክክለኛ የምርት ስም እና ዋጋ ያስገቡ።")
+                st.error("የተሳሳተ ፓስወርድ ነው!")
+        return
+
+    # Authenticated Admin Tabs
+    admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5 = st.tabs([
+        "📦 ትዕዛዞች (Orders)",
+        "🛍️ የምርት መቆጣጠሪያ (Products)",
+        "🏠 Home Page ኤዲተር",
+        "🤖 AI Chatbot መመሪያ",
+        "ℹ️ About Page ኤዲተር"
+    ])
+
+    store = read_store()
+
+    # Tab 1: Orders Management
+    with admin_tab1:
+        st.subheader("የደንበኞች ትዕዛዞች ዝርዝር")
+        orders = store.get("orders", [])
+        if not orders:
+            st.info("እስካሁን ምንም ትዕዛዝ አልገባም።")
+        else:
+            for order in reversed(orders):
+                st.write(f"**ትዕዛዝ ቁጥር፦ {order['number']}** | **ምርት፦** {order['item']} ({order['quantity']} አቃ) | **ጠቅላላ፦** {order['total']:,} ብር")
+                st.caption(f"ደንበኛ፦ {order['name']} | ስልክ፦ {order['phone']} | ቀን፦ {order.get('created_at', '')}")
+                c1, _ = st.columns([2, 3])
+                with c1:
+                    new_status = st.selectbox(
+                        "የስራ ሁኔታ",
+                        ["pending", "completed"],
+                        index=0 if order.get("status") == "pending" else 1,
+                        key=f"ord_status_{order['number']}"
+                    )
+                    if st.button("ሁኔታውን አዘምን", key=f"btn_ord_{order['number']}"):
+                        update_order_status(order["number"], new_status)
+                        st.success("ተዘምኗል!")
+                        st.rerun()
+                st.divider()
+
+    # Tab 2: Products Management (Add, Edit, Delete)
+    with admin_tab2:
+        st.subheader("አዲስ ምርት ጨምር ወይም የተመዘገቡትን ኤዲት አድርግ")
+        
+        # Add New Product Form
+        with st.expander("➕ አዲስ ምርት መጨመሪያ ፎርም"):
+            with st.form("add_prod_form"):
+                n_name = st.text_input("የምርት ስም")
+                n_cat = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"])
+                n_price = st.number_input("ዋጋ (ብር)", min_value=0, step=50)
+                if st.form_submit_button("ምርት መዝግብ"):
+                    if n_name.strip() and n_price > 0:
+                        save_product(None, n_cat, n_name.strip(), int(n_price))
+                        st.success("አዲስ ምርት ተጨምሯል!")
+                        st.rerun()
+
+        st.divider()
+        st.write("### የተመዘገቡ ምርቶች ዝርዝር")
+        for item in store.get("items", []):
+            with st.expander(f"📝 {item['name']} ({item['price']} ብር)"):
+                with st.form(f"edit_prod_{item['id']}"):
+                    e_name = st.text_input("የምርት ስም", value=item["name"])
+                    e_cat = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"], index=0 if item["category"] == "ልብስ" else 1)
+                    e_price = st.number_input("ዋጋ (ብር)", value=int(item["price"]), min_value=0, step=50)
+                    
+                    col_save, col_del = st.columns(2)
+                    with col_save:
+                        if st.form_submit_button("ለውጦችን መዝግብ"):
+                            save_product(item["id"], e_cat, e_name.strip(), int(e_price))
+                            st.success("ምርቱ ተስተካክሏል!")
+                            st.rerun()
+                
+                if st.button("🗑️ ምርቱን ሰርዝ (Delete)", key=f"del_{item['id']}"):
+                    delete_product(item["id"])
+                    st.warning("ምርቱ ተሰርዟል!")
+                    st.rerun()
+
+    # Tab 3: Home Page Content Management
+    with admin_tab3:
+        st.subheader("የመነሻ ገጽ (Home Page) ፅሁፎችን ማስተካከያ")
+        home_data = store.get("home", HOME_DEFAULTS)
+        with st.form("home_edit_form"):
+            h_ribbon = st.text_input("የላይኛው ሪበን ፅሁፍ (Ribbon)", value=home_data.get("hero_ribbon", ""))
+            h_title = st.text_input("ዋናው ርዕስ (Title)", value=home_data.get("hero_title", ""))
+            h_body = st.text_area("የመግቢያ ፅሁፍ (Body)", value=home_data.get("hero_body", ""), height=120)
+            if st.form_submit_button("የ Home ገፅ ለውጦችን ሴቭ አድርግ"):
+                update_section_data("home", {"hero_ribbon": h_ribbon, "hero_title": h_title, "hero_body": h_body})
+                st.success("Home page ተዘምኗል!")
+                st.rerun()
+
+    # Tab 4: AI Chatbot Instruction Management
+    with admin_tab4:
+        st.subheader("የ AI Chatbot የመጀመሪያ ሰላምታ እና መመሪያ ኤዲተር")
+        chat_data = store.get("chatbot", CHATBOT_DEFAULTS)
+        with st.form("chat_edit_form"):
+            c_msg = st.text_area("የቦቱ መጀመሪያ ሰላምታ (Greeting Message)", value=chat_data.get("system_instruction", ""), height=100)
+            if st.form_submit_button("የ Chatbot መመሪያን ሴቭ አድርግ"):
+                update_section_data("chatbot", {"system_instruction": c_msg})
+                st.success("የ Chatbot መመሪያ ተዘምኗል!")
+                st.rerun()
+
+    # Tab 5: About Us Content Management
+    with admin_tab5:
+        st.subheader("የስለ እኛ (About Us) ገጽ ፅሁፎች ማስተካከያ")
+        about_data = store.get("about", ABOUT_DEFAULTS)
+        with st.form("about_edit_form"):
+            a_title = st.text_input("ርዕስ (Title)", value=about_data.get("title", ""))
+            a_body = st.text_area("ስለ ድርጅቱ ዝርዝር ፅሁፍ (Body)", value=about_data.get("body", ""), height=150)
+            if st.form_submit_button("የ About ገፅ ለውጦችን ሴቭ አድርግ"):
+                update_section_data("about", {"title": a_title, "body": a_body})
+                st.success("About page ተዘምኗል!")
+                st.rerun()
 
 
 def main() -> None:
     inject_styles()
     render_brand_header()
 
-    # URL ላይ admin_key መኖሩን ማረጋገጫ (ለምሳሌ: yoursite.com/?admin_key=nooka2026)
     query_params = st.query_params
-    is_admin = query_params.get(ADMIN_URL_PARAM) == ADMIN_SECRET_PASS
+    is_admin_path = query_params.get(ADMIN_URL_PARAM) == ADMIN_SECRET_PASS
 
-    if is_admin:
-        # አድሚን ከሆነ Admin Dashboardን ብቻ ያሳየዋል
+    if is_admin_path:
         render_admin_dashboard()
     else:
-        # ተራ ተጠቃሚ ከሆነ የተለመዱትን ገጾች ያሳያል
         tab_home, tab_chatbot, tab_about = st.tabs(
             ["መነሻ ገጽ (Home)", "AI Chatbot", "ስለ እኛ (About)"]
         )
