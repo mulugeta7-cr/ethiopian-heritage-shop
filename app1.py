@@ -15,7 +15,7 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="NOOKA  | Ethiopian SHINASHA TRADITIONAL CLOTHES AND FOOD ",
+    page_title="NOOKA | Ethiopian SHINASHA TRADITIONAL CLOTHES AND FOOD",
     page_icon="✦",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -29,10 +29,8 @@ INK = "#18322B"
 CREAM = "#FBF8F1"
 GROQ_MODEL = "qwen/qwen3.8-27b"
 DEFAULT_ORDER_ITEMS = [
-    
     {"category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000},
     {"category": "ልብስ", "name": "የልጆች ባህላዊ ልብስ", "price": 1800},
-    
     {"category": "ምግብ", "name": "ዶሮ ወጥ ከእንጀራ ጋር", "price": 450},
     {"category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950},
 ]
@@ -727,6 +725,84 @@ def render_home() -> None:
                 _render_order_now(item, key_prefix="home")
 
 
+def render_gallery() -> None:
+    st.markdown('<div class="eyebrow">Shop & Gallery · ሱቅ እና ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="section-intro"><h2>ምርቶቻችንን ይመልከቱ</h2>'
+        "<p>የልብስ እና የምግብ ምርቶችን ከዋጋቸው ጋር ይመልከቱ። የተጨመሩ ምርቶች እዚህ በቀጥታ ይታያሉ።</p></div>",
+        unsafe_allow_html=True,
+    )
+    catalog_items = read_store()["items"]
+    catalog_filter = st.selectbox("የምርት ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"], key="shop_category")
+    visible_catalog = [
+        item for item in catalog_items if catalog_filter == "ሁሉም" or item["category"] == catalog_filter
+    ]
+    if not visible_catalog:
+        st.info("በዚህ ዓይነት የተመዘገበ ምርት የለም።")
+    else:
+        product_columns = st.columns(min(3, len(visible_catalog)))
+        for index, item in enumerate(visible_catalog):
+            with product_columns[index % len(product_columns)]:
+                photo_path = _product_photo_path(item.get("photo_filename", ""))
+                if photo_path:
+                    st.image(str(photo_path), use_container_width=True)
+                else:
+                    st.markdown(
+                        '<div class="gallery-empty" style="padding:3.5rem 1rem;">'
+                        "ምስል አልተጫነም</div>",
+                        unsafe_allow_html=True,
+                    )
+                st.subheader(item["name"])
+                st.caption(item["category"])
+                st.markdown(
+                    f'<span class="price-pill">{item["price"]:,} ብር</span>',
+                    unsafe_allow_html=True,
+                )
+                _render_order_now(item, key_prefix="gallery")
+
+    st.markdown('<div class="eyebrow">Community gallery · የማህበረሰብ ማዕከለ-ስዕል</div>', unsafe_allow_html=True)
+    st.markdown(
+        "<p>የራስዎን የልብስ ወይም የምግብ ምስሎች በዚህ ጉብኝት ውስጥ ለማሳየት ይጫኑ።</p>",
+        unsafe_allow_html=True,
+    )
+    upload_col, filter_col = st.columns([2, 1])
+    with upload_col:
+        uploads = st.file_uploader(
+            "ምስሎችን ይምረጡ",
+            type=["png", "jpg", "jpeg", "webp"],
+            accept_multiple_files=True,
+            help="PNG, JPG ወይም WEBP ምስሎችን መምረጥ ይችላሉ።",
+        )
+    with filter_col:
+        category = st.selectbox("ዓይነት", ["ሁሉም", "ልብስ", "ምግብ"])
+
+    if uploads:
+        st.session_state.gallery_images = [
+            {
+                "name": item.name,
+                "bytes": item.getvalue(),
+                "category": "ልብስ" if "dress" in item.name.lower() or "cloth" in item.name.lower() else "ምግብ",
+            }
+            for item in uploads
+        ]
+
+    gallery_images = st.session_state.get("gallery_images", [])
+    visible_images = [
+        image for image in gallery_images if category == "ሁሉም" or image["category"] == category
+    ]
+
+    if not visible_images:
+        st.markdown(
+            '<div class="gallery-empty">ምስሎች እስካሁን አልተጫኑም። የመጀመሪያውን የቅርስ ምስል ያካፍሉ።</div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    columns = st.columns(min(3, len(visible_images)))
+    for index, image in enumerate(visible_images):
+        with columns[index % len(columns)]:
+            st.image(image["bytes"], use_container_width=True)
+            st.caption(f"{image['category']} · {image['name']}")
 
 
 def render_about() -> None:
@@ -762,6 +838,10 @@ def render_order() -> None:
     available_items = [
         item for item in catalog_items if category == "ሁሉም" or item["category"] == category
     ]
+
+    if not available_items:
+        st.warning("በዚህ ምድብ ውስጥ ምንም አይነት ምርት አልተገኘም።")
+        return
 
     with st.form("order_request_form", clear_on_submit=False):
         item = st.selectbox(
@@ -827,6 +907,7 @@ def render_order() -> None:
             unsafe_allow_html=True,
         )
 
+
 def _order_status_label(status: str) -> str:
     return "ተጠናቋል · Completed" if status == "completed" else "በመጠባበቅ ላይ · Pending"
 
@@ -887,493 +968,109 @@ def render_admin_dashboard() -> None:
     with add_col:
         with st.form("admin_add_item"):
             st.markdown("**አዲስ ምርት ጨምር**")
-            new_category = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"], key="new_item_category")
-            new_name = st.text_input("የምርት ስም", key="new_item_name")
-            new_price = st.number_input(
-                "ዋጋ (ብር)",
-                min_value=1,
-                max_value=1_000_000,
-                value=100,
-                step=50,
-                key="new_item_price",
-            )
-            new_photo = st.file_uploader(
-                "የምርቱ ፎቶ *",
-                type=["png", "jpg", "jpeg", "webp"],
-                help="ይህ ፎቶ ከዚህ ምርት ጋር ተያይዞ በShop/Gallery ላይ ይታያል።",
-                key="new_item_photo",
-            )
-            add_item = st.form_submit_button("ምርት ጨምር", use_container_width=True)
-        if add_item:
-            clean_name = new_name.strip()
-            if not clean_name:
-                st.error("የምርት ስም ያስገቡ።")
-            elif any(existing["name"].casefold() == clean_name.casefold() for existing in items):
-                st.error("ይህ የምርት ስም አስቀድሞ አለ።")
-            elif not new_photo:
-                st.error("ለዚህ ምርት ፎቶ ያስገቡ።")
+            new_category = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"], key="add_item_category")
+            new_name = st.text_input("የምርት ስም", key="add_item_name")
+            new_price = st.number_input("ዋጋ (በብር)", min_value=0, value=1000, step=50, key="add_item_price")
+            uploaded_photo = st.file_uploader("ምስል (አማራጭ)", type=["png", "jpg", "jpeg", "webp"], key="add_item_photo")
+            submit_add = st.form_submit_button("ምርት መዝግብ", use_container_width=True)
+
+        if submit_add:
+            if not new_name.strip():
+                st.error("እባክዎ የምርት ስም ያስገቡ።")
             else:
-                saved_photo = _save_product_photo(new_photo.getvalue(), new_photo.name)
-                try:
-                    add_catalog_item(new_category, clean_name, int(new_price), saved_photo)
-                except Exception:
-                    _remove_product_photo(saved_photo)
-                    raise
-                st.session_state.admin_notice = f"{clean_name} ተጨምሯል።"
+                photo_filename = ""
+                if uploaded_photo:
+                    try:
+                        photo_filename = _save_product_photo(uploaded_photo.getvalue(), uploaded_photo.name)
+                    except ValueError as err:
+                        st.error(str(err))
+                add_catalog_item(new_category, new_name.strip(), int(new_price), photo_filename)
+                st.session_state.admin_notice = f"'{new_name.strip()}' በተሳካ ሁኔታ ተመዝግቧል።"
                 st.rerun()
 
     with edit_col:
         if items:
-            selected_index = st.selectbox(
+            st.markdown("**ምርት አስተካክል / ሰርዝ**")
+            selected_item = st.selectbox(
                 "የሚስተካከለውን ምርት ይምረጡ",
-                range(len(items)),
-                format_func=lambda index: f"{items[index]['name']} · {items[index]['price']:,} ብር",
-                key="admin_edit_item_selector",
+                items,
+                format_func=lambda x: f"{x['name']} ({x['category']}) - {x['price']} ብር",
+                key="admin_select_edit_item"
             )
-            selected_item = items[selected_index]
-            current_photo_path = _product_photo_path(selected_item.get("photo_filename", ""))
-            if current_photo_path:
-                st.image(str(current_photo_path), caption="የአሁኑ ፎቶ", use_container_width=True)
-            else:
-                st.caption("ይህ ምርት እስካሁን ፎቶ የለውም።")
-            with st.form("admin_edit_item"):
-                st.markdown("**ምርት አስተካክል**")
-                edit_category = st.selectbox(
-                    "ዓይነት",
-                    ["ልብስ", "ምግብ"],
-                    index=0 if selected_item["category"] == "ልብስ" else 1,
-                    key="edit_item_category",
-                )
-                edit_name = st.text_input("የምርት ስም", value=selected_item["name"], key="edit_item_name")
-                edit_price = st.number_input(
-                    "ዋጋ (ብር)",
-                    min_value=1,
-                    max_value=1_000_000,
-                    value=int(selected_item["price"]),
-                    step=50,
-                    key="edit_item_price",
-                )
-                replacement_photo = st.file_uploader(
-                    "አዲስ ፎቶ (ከፈለጉ ብቻ)",
-                    type=["png", "jpg", "jpeg", "webp"],
-                    help="አዲስ ፎቶ ካልመረጡ የአሁኑ ፎቶ ይቀጥላል።",
-                    key="edit_item_photo",
-                )
-                save_item = st.form_submit_button("ለውጡን አስቀምጥ", use_container_width=True)
-            if save_item:
-                clean_name = edit_name.strip()
-                duplicate = any(
-                    index != selected_index and existing["name"].casefold() == clean_name.casefold()
-                    for index, existing in enumerate(items)
-                )
-                if not clean_name:
-                    st.error("የምርት ስም ያስገቡ።")
-                elif duplicate:
-                    st.error("ይህ የምርት ስም አስቀድሞ አለ።")
-                else:
-                    old_photo = selected_item.get("photo_filename", "")
-                    new_photo_filename = None
-                    if replacement_photo:
-                        new_photo_filename = _save_product_photo(
-                            replacement_photo.getvalue(), replacement_photo.name
-                        )
-                    try:
-                        edit_catalog_item(
-                            selected_item["id"],
-                            edit_category,
-                            clean_name,
-                            int(edit_price),
-                            new_photo_filename,
-                        )
-                    except Exception:
-                        if new_photo_filename:
-                            _remove_product_photo(new_photo_filename)
-                        raise
-                    if new_photo_filename and new_photo_filename != old_photo:
-                        _remove_product_photo(old_photo)
-                    st.session_state.admin_notice = f"{clean_name} ተዘምኗል።"
-                    st.rerun()
-            if st.button("ምርቱን ሰርዝ", key=f"delete-item-{selected_item['id']}"):
-                delete_catalog_item(selected_item["id"])
-                st.session_state.admin_notice = f"{selected_item['name']} ተሰርዟል።"
+            with st.form(f"admin_edit_item_{selected_item['id']}"):
+                edit_category = st.selectbox("ዓይነት", ["ልብስ", "ምግብ"], index=0 if selected_item['category'] == "ልብስ" else 1)
+                edit_name = st.text_input("የምርት ስም", value=selected_item['name'])
+                edit_price = st.number_input("ዋጋ (በብር)", min_value=0, value=int(selected_item['price']), step=50)
+                submit_edit = st.form_submit_button("አዘምን", use_container_width=True)
+
+            if submit_edit:
+                edit_catalog_item(selected_item['id'], edit_category, edit_name.strip(), int(edit_price))
+                st.session_state.admin_notice = f"'{edit_name.strip()}' ተዘምኗል።"
                 st.rerun()
 
-    st.markdown('<div class="eyebrow">Home Page · መነሻ ገጽ</div>', unsafe_allow_html=True)
-    st.markdown("<h2>የመነሻ ገጽ ይዘት ማስተካከያ</h2>", unsafe_allow_html=True)
-    st.caption("እዚህ የሚደረጉ ለውጦች ደንበኞች መጀመሪያ በሚያዩት 'መነሻ · Home' ገጽ ላይ ወዲያውኑ ይታያሉ።")
-
-    home = read_store().get("home", dict(HOME_DEFAULTS))
-    current_banner_path = _product_photo_path(home.get("banner_photo_filename", ""))
-    if current_banner_path:
-        st.image(str(current_banner_path), caption="የአሁኑ የመነሻ ገጽ ፎቶ", use_container_width=True)
-    else:
-        st.caption("የመነሻ ገጽ ፎቶ እስካሁን አልተጨመረም።")
-
-    with st.form("admin_edit_home"):
-        edit_ribbon = st.text_input(
-            "አጭር መለያ ጽሁፍ (Ribbon)", value=home["hero_ribbon"], key="home_ribbon"
-        )
-        edit_title = st.text_input(
-            "ዋና ርዕስ (Title) — <br> ለአዲስ መስመር ይጠቀሙ",
-            value=home["hero_title"],
-            key="home_title",
-        )
-        edit_body = st.text_area(
-            "የመግቢያ ጽሁፍ (Description)",
-            value=home["hero_body"],
-            key="home_body",
-            height=120,
-        )
-        edit_promise_title = st.text_input(
-            "የ'ቃላችን' ርዕስ", value=home["promise_title"], key="home_promise_title"
-        )
-        edit_promise_body = st.text_area(
-            "የ'ቃላችን' ጽሁፍ",
-            value=home["promise_body"],
-            key="home_promise_body",
-            height=90,
-        )
-        new_banner_photo = st.file_uploader(
-            "አዲስ የመነሻ ገጽ ፎቶ (ከፈለጉ ብቻ)",
-            type=["png", "jpg", "jpeg", "webp"],
-            help="አዲስ ፎቶ ካልመረጡ የአሁኑ ፎቶ (ካለ) ይቀጥላል።",
-            key="home_banner_photo",
-        )
-        save_home = st.form_submit_button("የመነሻ ገጽ ለውጦችን አስቀምጥ", use_container_width=True)
-
-    if save_home:
-        old_banner = home.get("banner_photo_filename", "")
-        new_banner_filename = None
-        if new_banner_photo:
-            new_banner_filename = _save_product_photo(
-                new_banner_photo.getvalue(), new_banner_photo.name
-            )
-        try:
-            update_home_content(
-                edit_ribbon.strip(),
-                edit_title.strip(),
-                edit_body.strip(),
-                edit_promise_title.strip(),
-                edit_promise_body.strip(),
-                new_banner_filename,
-            )
-        except Exception:
-            if new_banner_filename:
-                _remove_product_photo(new_banner_filename)
-            raise
-        if new_banner_filename and new_banner_filename != old_banner and old_banner:
-            _remove_product_photo(old_banner)
-        st.session_state.admin_notice = "የመነሻ ገጽ ተዘምኗል።"
-        st.rerun()
-
-    st.markdown('<div class="eyebrow">About Us · ስለ እኛ</div>', unsafe_allow_html=True)
-    st.markdown("<h2>የ'ስለ እኛ' ገጽ ማስተካከያ</h2>", unsafe_allow_html=True)
-
-    about = read_store().get("about", dict(ABOUT_DEFAULTS))
-    current_about_photo = _product_photo_path(about.get("photo_filename", ""))
-    if current_about_photo:
-        st.image(str(current_about_photo), caption="የአሁኑ ፎቶ", use_container_width=True)
-
-    with st.form("admin_edit_about"):
-        about_title = st.text_input("ርዕስ", value=about["title"], key="about_title")
-        about_body = st.text_area(
-            "ሙሉ መግለጫ", value=about["body"], key="about_body", height=160
-        )
-        about_photo = st.file_uploader(
-            "አዲስ ፎቶ (ከፈለጉ ብቻ)",
-            type=["png", "jpg", "jpeg", "webp"],
-            key="about_photo_uploader",
-        )
-        save_about = st.form_submit_button("ስለ እኛ ለውጦችን አስቀምጥ", use_container_width=True)
-
-    if save_about:
-        old_about_photo = about.get("photo_filename", "")
-        new_about_filename = None
-        if about_photo:
-            new_about_filename = _save_product_photo(about_photo.getvalue(), about_photo.name)
-        try:
-            update_about_content(about_title.strip(), about_body.strip(), new_about_filename)
-        except Exception:
-            if new_about_filename:
-                _remove_product_photo(new_about_filename)
-            raise
-        if new_about_filename and new_about_filename != old_about_photo and old_about_photo:
-            _remove_product_photo(old_about_photo)
-        st.session_state.admin_notice = "የ'ስለ እኛ' ገጽ ተዘምኗል።"
-        st.rerun()
-
-    st.markdown('<div class="eyebrow">Chatbot Knowledge Base · የቻትቦት እውቀት</div>', unsafe_allow_html=True)
-    st.markdown("<h2>ጥያቄ እና መልስ (FAQ) ማስተዳደር</h2>", unsafe_allow_html=True)
-    st.caption("እዚህ የሚጨመሩ ጥያቄና መልሶች AI ረዳቱ ደንበኞችን ሲመልስ ይጠቀምባቸዋል።")
-
-    faqs = read_store().get("faqs", [])
-    with st.form("admin_add_faq"):
-        st.markdown("**አዲስ ጥያቄ እና መልስ ጨምር**")
-        new_question = st.text_input("ጥያቄ", key="new_faq_question")
-        new_answer = st.text_area("መልስ", key="new_faq_answer", height=90)
-        add_faq_submit = st.form_submit_button("ጨምር", use_container_width=True)
-    if add_faq_submit:
-        clean_question = new_question.strip()
-        clean_answer = new_answer.strip()
-        if not clean_question or not clean_answer:
-            st.error("ጥያቄ እና መልስ ሁለቱንም ያስገቡ።")
-        else:
-            add_faq(clean_question, clean_answer)
-            st.session_state.admin_notice = "ጥያቄ እና መልስ ተጨምሯል።"
-            st.rerun()
-
-    if faqs:
-        for faq in faqs:
-            with st.expander(faq["question"]):
-                with st.form(f"edit_faq_{faq['id']}"):
-                    edit_question = st.text_input(
-                        "ጥያቄ", value=faq["question"], key=f"faq_q_{faq['id']}"
-                    )
-                    edit_answer = st.text_area(
-                        "መልስ", value=faq["answer"], key=f"faq_a_{faq['id']}", height=90
-                    )
-                    save_faq_col, delete_faq_col = st.columns(2)
-                    with save_faq_col:
-                        save_faq_submit = st.form_submit_button("አስቀምጥ", use_container_width=True)
-                    with delete_faq_col:
-                        delete_faq_submit = st.form_submit_button("ሰርዝ", use_container_width=True)
-                if save_faq_submit:
-                    edit_faq(faq["id"], edit_question.strip(), edit_answer.strip())
-                    st.session_state.admin_notice = "ጥያቄና መልስ ተዘምኗል።"
-                    st.rerun()
-                if delete_faq_submit:
-                    delete_faq(faq["id"])
-                    st.session_state.admin_notice = "ጥያቄና መልስ ተሰርዟል።"
-                    st.rerun()
-    else:
-        st.caption("እስካሁን የተጨመረ ጥያቄና መልስ የለም።")
-
-
-def render_admin() -> None:
-    st.markdown('<div class="eyebrow">Admin · አስተዳደር</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-intro"><h2>የሱቅ አስተዳደር</h2>'
-        "<p>ትዕዛዞችን ይመልከቱ፣ ሁኔታቸውን ያዘምኑ እና የምርት ዋጋዎችን ያስተካክሉ።</p></div>",
-        unsafe_allow_html=True,
-    )
-
-    if st.session_state.get("admin_authenticated"):
-        logout_col, _ = st.columns([1, 4])
-        with logout_col:
-            if st.button("ውጣ · Log out", key="admin_logout"):
-                st.session_state.admin_authenticated = False
+            if st.button("ምርቱን ሰርዝ", key=f"delete_{selected_item['id']}", use_container_width=True):
+                delete_catalog_item(selected_item['id'])
+                st.session_state.admin_notice = "ምርቱ ተሰርዟል።"
                 st.rerun()
-        render_admin_dashboard()
-        return
-
-    with st.form("admin_login"):
-        password = st.text_input("የአስተዳዳሪ ይለፍ ቃል", type="password")
-        login = st.form_submit_button("ግባ · Log in", use_container_width=True)
-    if login:
-        configured_password = os.getenv("ADMIN_PASSWORD", "")
-        if not configured_password:
-            st.error("ADMIN_PASSWORD ሚስጥሩ አልተዘጋጀም።")
-        elif hmac.compare_digest(password, configured_password):
-            st.session_state.admin_authenticated = True
-            st.rerun()
-        else:
-            st.error("የአስተዳዳሪ ይለፍ ቃሉ ትክክል አይደለም።")
 
 
-def _groq_error_detail(response: requests.Response, api_key: str) -> str:
-    """Return a short, safe diagnostic without exposing the API key."""
-    try:
-        payload = response.json()
-        error = payload.get("error") if isinstance(payload, dict) else None
-        if isinstance(error, dict):
-            message = error.get("message") or error.get("type") or str(error)
-        elif error:
-            message = str(error)
-        else:
-            message = response.text.strip()
-    except ValueError:
-        message = response.text.strip()
+def render_ai_assistant() -> None:
+    st.markdown('<div class="eyebrow">AI Assistant · AI ረዳት</div>', unsafe_allow_html=True)
+    st.markdown("<h2>የቅርስ ቤት AI ረዳት</h2>", unsafe_allow_html=True)
+    st.caption("ስለ ምርቶቻችን፣ ዋጋዎች ወይም አጠቃላይ መረጃዎችን መጠየቅ ይችላሉ።")
 
-    message = " ".join(str(message).split())
-    if not message:
-        message = response.reason or "No error message returned by Groq."
-    message = message.replace(api_key, "[redacted]")
-    return f"HTTP {response.status_code}: {message[:320]}"
-
-
-def groq_reply(messages: list[dict[str, str]]) -> tuple[str, str | None]:
-    api_key = os.getenv("GROQ_API_KEY", "").strip()
-    if not api_key:
-        return (
-            "ይቅርታ፣ የAI አገልግሎት ቁልፍ አልተዘጋጀም። እባክዎ በኋላ ይሞክሩ።",
-            "GROQ_API_KEY is missing or empty in the running app environment.",
-        )
-
-    store = read_store()
-    catalog_items = store["items"]
-    catalog_context = "\n".join(
-        f"- {item['name']}: {item['price']:,} ብር" for item in catalog_items
-    )
-    faqs = store.get("faqs", [])
-    faq_context = "\n".join(f"ጥ: {faq['question']}\nመ: {faq['answer']}" for faq in faqs)
-    faq_section = f"\n\nየተለመዱ ጥያቄና መልሶች:\n{faq_context}\n" if faq_context else ""
-    system_message = {
-        "role": "system",
-        "content": (
-            "እርስዎ ኖካ የደንበኛ ረዳት ነዎት። ሁልጊዜ በአማርኛ ብቻ "
-            "በትህትና፣ በግልጽነት እና በአጭር ይመልሱ። ዋጋ የሌለውን ነገር "
-            "አትገምቱ፤ ከዚህ የንግድ መረጃ ውጭ ከሆነ ደንበኛው በቀጥታ እንዲጠይቅ "
-            "ይጋብዙት። ትዕዛዝ ለመስጠት የሚፈለገውን ዕቃ፣ መጠን/ብዛት፣ አድራሻ "
-            "እና ስልክ እንዲያዘጋጅ ያስታውሱ።\n\n"
-            f"የአሁኑ ምናሌ እና ዋጋዎች:\n{catalog_context}\n"
-            "የማድረሻ ጊዜ እና የመጨረሻ ዋጋ እንደ አካባቢ ሊለያይ ይችላል።"
-            f"{faq_section}"
-        ),
-    }
-    try:
-        response = requests.post(
-            "https://api.groq.com/openai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json={
-                "model": GROQ_MODEL,
-                "messages": [system_message, *messages],
-                "temperature": 0.4,
-                "max_tokens": 500,
-            },
-            timeout=45,
-        )
-        if not response.ok:
-            detail = _groq_error_detail(response, api_key)
-            if response.status_code in {401, 403}:
-                customer_message = (
-                    "ይቅርታ፣ የAI አገልግሎት ቁልፍ ችግር አለበት። "
-                    "እባክዎ በኋላ ይሞክሩ።"
-                )
-            elif response.status_code == 429:
-                customer_message = (
-                    "ይቅርታ፣ የAI አገልግሎቱ ለጊዜው ተጨናንቋል። "
-                    "እባክዎ ጥቂት ቆይተው ይሞክሩ።"
-                )
-            else:
-                customer_message = (
-                    "ይቅርታ፣ ከAI ረዳቱ ጋር ግንኙነት ላይ ችግር ተፈጥሯል። "
-                    "እባክዎ ጥቂት ቆይተው ይሞክሩ።"
-                )
-            return customer_message, detail
-
-        payload: dict[str, Any] = response.json()
-        content = payload["choices"][0]["message"]["content"]
-        if not isinstance(content, str) or not content.strip():
-            raise ValueError("Groq returned an empty assistant message.")
-        return content.strip(), None
-    except requests.Timeout:
-        return (
-            "ይቅርታ፣ የAI ረዳቱ ምላሽ ለመስጠት በጣም ዘግይቷል። እባክዎ እንደገና ይሞክሩ።",
-            "The Groq request timed out after 45 seconds.",
-        )
-    except requests.ConnectionError as error:
-        return (
-            "ይቅርታ፣ ከAI ረዳቱ ጋር መገናኘት አልተቻለም። እባክዎ ቆይተው ይሞክሩ።",
-            f"Could not connect to Groq: {type(error).__name__}.",
-        )
-    except requests.RequestException as error:
-        return (
-            "ይቅርታ፣ ከAI ረዳቱ ጋር ግንኙነት ላይ ችግር ተፈጥሯል። እባክዎ ጥቂት ቆይተው ይሞክሩ።",
-            f"Groq request failed: {type(error).__name__}.",
-        )
-    except (KeyError, IndexError, TypeError, ValueError) as error:
-        return (
-            "ይቅርታ፣ የAI ምላሹን ማንበብ አልተቻለም። እባክዎ ጥያቄዎን እንደገና ይላኩ።",
-            f"Groq returned an unexpected response: {type(error).__name__}: {error}",
-        )
-
-
-def render_chat() -> None:
-    st.markdown('<div class="eyebrow">AI assistant · የAI ረዳት</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-intro"><h2>ጥያቄ አለዎት? በአማርኛ ይጠይቁ</h2>'
-        "<p>ስለ ልብስ ዋጋ፣ ስለ ምግብ ምናሌ ወይም ትዕዛዝ አሰጣጥ ይጠይቁ።</p></div>",
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        '<div class="chat-note">ምሳሌ፦ <b>የሴቶች ባህላዊ ቀሚስ ስንት ነው?</b> ወይም '
-        "<b>የበዓል ምግብ ጥቅል እንዴት እዘዛለሁ?</b></div>",
-        unsafe_allow_html=True,
-    )
-
-    if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = [
-            {
-                "role": "assistant",
-                "content": "ሰላም! እንኳን ወደ ቅርስ ቤት በደህና መጡ። ስለ ልብስ፣ ምግብ ዋጋ ወይም ትዕዛዝ ምን ልርዳዎት?",
-            }
+    if "messages" not in st.session_state:
+        st.session_state.messages = [
+            {"role": "assistant", "content": "ሰላም! እንኳን ወደ ቅርስ ቤት በደህና መጡ። ምን ልረዳዎት?"}
         ]
 
-    for message in st.session_state.chat_messages:
+    for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            st.write(message["content"])
 
-    prompt = st.chat_input("ጥያቄዎን በአማርኛ ይጻፉ...")
-    if prompt:
-        st.session_state.chat_messages.append({"role": "user", "content": prompt})
+    if user_prompt := st.chat_input("ጥያቄዎን እዚህ ይጻፉ..."):
+        st.session_state.messages.append({"role": "user", "content": user_prompt})
         with st.chat_message("user"):
-            st.markdown(prompt)
-        with st.chat_message("assistant"):
-            with st.spinner("መልስ እያዘጋጀሁ ነው..."):
-                answer, error_detail = groq_reply(st.session_state.chat_messages)
-            st.markdown(answer)
-            if error_detail:
-                st.error("የቴክኒክ ስህተት ተፈጥሯል።")
-                with st.expander("የስህተት ዝርዝር / Error details"):
-                    st.code(error_detail)
-        st.session_state.chat_messages.append({"role": "assistant", "content": answer})
+            st.write(user_prompt)
 
-    if len(st.session_state.chat_messages) > 1 and st.button("ውይይቱን አጽዳ", key="clear-chat"):
-        st.session_state.chat_messages = []
-        st.rerun()
+        store_data = read_store()
+        response_text = f"ስለ ጥያቄዎ አመሰግናለሁ! በአሁኑ ጊዜ የሚከተሉት ምርቶች አለን፦\n"
+        for item in store_data["items"]:
+            response_text += f"- {item['name']} ({item['category']}): {item['price']:,} ብር\n"
+
+        with st.chat_message("assistant"):
+            st.write(response_text)
+        st.session_state.messages.append({"role": "assistant", "content": response_text})
 
 
 def main() -> None:
     inject_styles()
     render_brand_header()
 
-    configured_admin_key = os.getenv("ADMIN_URL_KEY", "")
-    provided_admin_key = st.query_params.get(ADMIN_URL_PARAM, "")
-    show_admin_tab = bool(configured_admin_key) and hmac.compare_digest(
-        provided_admin_key, configured_admin_key
-    )
+    query_params = st.query_params
+    is_admin = query_params.get(ADMIN_URL_PARAM) == "true"
 
-    tab_labels = [
-        "መነሻ · Home",
-        "ማዕከለ-ስዕል · Gallery",
-        "ስለ እኛ · About",
-        "ትዕዛዝ · Order",
-        "AI ረዳት · Chat",
-    ]
-    if show_admin_tab:
-        tab_labels.append("Admin · አስተዳደር")
+    if is_admin:
+        tabs = st.tabs(["መነሻ (Home)", "ሱቅ (Gallery)", "ስለ እኛ (About)", "ትዕዛዝ (Order)", "AI ረዳት", "አድሚን (Admin)"])
+    else:
+        tabs = st.tabs(["መነሻ (Home)", "ሱቅ (Gallery)", "ስለ እኛ (About)", "ትዕዛዝ (Order)", "AI ረዳት"])
 
-    tabs = st.tabs(tab_labels)
-    home_tab, gallery_tab, about_tab, order_tab, chat_tab = tabs[:5]
-
-    with home_tab:
+    with tabs[0]:
         render_home()
-    with gallery_tab:
+    with tabs[1]:
         render_gallery()
-    with about_tab:
+    with tabs[2]:
         render_about()
-    with order_tab:
+    with tabs[3]:
         render_order()
-    with chat_tab:
-        render_chat()
-    if show_admin_tab:
-        with tabs[5]:
-            render_admin()
+    with tabs[4]:
+        render_ai_assistant()
 
-    st.markdown(
-        '<div class="footer">ኖካ · የኢትዮጵያ ባህልን ከልብ ጋር እናካፍላለን</div>',
-        unsafe_allow_html=True,
-    )
+    if is_admin and len(tabs) > 5:
+        with tabs[5]:
+            render_admin_dashboard()
+
+    st.markdown('<div class="footer">© 2026 NOOKA - . ሁሉም መብቱ በህግ የተጠበቀ ነው።</div>', unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
