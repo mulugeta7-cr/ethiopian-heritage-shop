@@ -9,18 +9,19 @@ import streamlit as st
 
 
 st.set_page_config(
-    page_title="NOOKA | Ethiopian SHINASHA TRADITIONAL CLOTHES AND FOOD",
+    page_title="NOOKA | Ethiopian TRADITIONAL CLOTHES AND FOOD",
     page_icon="✦",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-
-GREEN = "#16844A"
-YELLOW = "#F2C94C"
-RED = "#C53D3D"
-INK = "#18322B"
-CREAM = "#FBF8F1"
+# Colors Palette
+GREEN = "#0F5132"
+LIGHT_GREEN = "#198754"
+ACCENT_GOLD = "#D4AF37"
+DARK_BG = "#1A1A1A"
+CARD_BG = "#FFFFFF"
+CREAM = "#F9F8F3"
 
 DEFAULT_ORDER_ITEMS = [
     {"id": "default-1", "category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000, "photo_filename": ""},
@@ -30,7 +31,7 @@ DEFAULT_ORDER_ITEMS = [
 ]
 
 HOME_DEFAULTS = {
-    "hero_ribbon": "Ethiopian heritage · made with care",
+    "hero_ribbon": "ETHIOPIAN HERITAGE · MADE WITH CARE",
     "hero_title": "የኢትዮጵያ ቅርስ<br>በአንድ ቦታ",
     "hero_body": "በባህላዊ ልብስ እና በጣፋጭ የኢትዮጵያ ምግቦች የቤተሰብ ትውስታዎችን እንፈጥራለን። ከእጅ የተሰሩ የባህል ልብሶችን እና በፍቅር የተዘጋጁ ምግቦችን ያግኙ።",
     "photo_filename": "",
@@ -47,7 +48,7 @@ CHATBOT_DEFAULTS = {
 }
 
 ADMIN_URL_PARAM = "admin_key"
-ADMIN_SECRET_PASS = "nooka2026"  # የአድሚን መግቢያ ፓስወርድ
+ADMIN_SECRET_PASS = "nooka2026"
 
 STORE_PATH = Path(__file__).with_name("storefront_data.json")
 PHOTO_DIR = Path(__file__).with_name("product_photos")
@@ -177,38 +178,208 @@ def _product_photo_path(filename: str) -> Path | None:
     return photo_path if photo_path.exists() else None
 
 
+# 🎨 ADVANCED PROFESSIONAL CSS STYLING
 def inject_styles() -> None:
     st.markdown(
         f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Ethiopic:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+Ethiopic:wght@400;500;600;700;800&display=swap');
 
-        :root {{
-            --green: {GREEN};
-            --yellow: {YELLOW};
-            --red: {RED};
-            --ink: {INK};
-            --cream: {CREAM};
-        }}
+        /* App Main Background */
         .stApp {{
-            background:
-                radial-gradient(circle at 94% 4%, rgba(242, 201, 76, .18), transparent 24rem),
-                linear-gradient(180deg, #fffdf8 0%, var(--cream) 54%, #f5f0e5 100%);
-            color: var(--ink);
+            background-color: {CREAM};
+            font-family: 'Noto Sans Ethiopic', 'Plus Jakarta Sans', sans-serif;
+            color: #2D3748;
         }}
+
         .block-container {{
-            max-width: 1180px;
-            padding-top: 2.5rem;
-            padding-bottom: 4rem;
+            max-width: 1200px;
+            padding-top: 2rem;
+            padding-bottom: 5rem;
         }}
-        h1, h2, h3, p, label, .stTabs {{ font-family: 'Noto Sans Ethiopic', sans-serif; }}
-        .brand-mark {{ display: inline-flex; align-items: center; gap: .7rem; color: var(--ink); font-size: 1.15rem; font-weight: 800; }}
-        .brand-symbol {{ display: inline-flex; align-items: center; justify-content: center; width: 2.35rem; height: 2.35rem; border-radius: .8rem; color: #fffdf8; background: conic-gradient(from 210deg, var(--green), var(--yellow), var(--red), var(--green)); }}
-        .eyebrow {{ display: inline-block; margin: 1.6rem 0 .7rem; color: var(--green); font-size: .78rem; font-weight: 800; text-transform: uppercase; }}
-        .hero {{ position: relative; margin: 1.2rem 0 2.2rem; padding: clamp(2rem, 5vw, 4.5rem); border-radius: 2rem; background: linear-gradient(120deg, rgba(22, 132, 74, .96), rgba(24, 50, 43, .94)); color: #fffdf8; }}
-        .hero h1 {{ color: #fffdf8; font-size: clamp(2rem, 5vw, 4.5rem); }}
-        .price-pill {{ display: inline-block; margin: .55rem 0; padding: .25rem .6rem; border-radius: 999px; background: rgba(22, 132, 74, .1); color: var(--green); font-weight: 800; }}
-        .gallery-empty {{ padding: 2.5rem 1rem; border: 1px dashed rgba(24, 50, 43, .22); border-radius: 1rem; text-align: center; color: rgba(24, 50, 43, .65); }}
+
+        /* Header Brand Styling */
+        .brand-mark {{
+            display: inline-flex;
+            align-items: center;
+            gap: .8rem;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: {GREEN};
+            padding: 0.5rem 1rem;
+            background: rgba(15, 81, 50, 0.05);
+            border-radius: 12px;
+            border: 1px solid rgba(15, 81, 50, 0.1);
+        }}
+        .brand-symbol {{
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 10px;
+            color: #FFFFFF;
+            background: linear-gradient(135deg, {GREEN}, {ACCENT_GOLD});
+            box-shadow: 0 4px 10px rgba(15, 81, 50, 0.2);
+        }}
+
+        /* Hero Banner */
+        .hero {{
+            position: relative;
+            margin: 1.5rem 0 2.5rem;
+            padding: 3.5rem 2.5rem;
+            border-radius: 24px;
+            background: linear-gradient(135deg, {GREEN} 0%, #082E1C 100%);
+            color: #FFFFFF;
+            box-shadow: 0 20px 40px rgba(15, 81, 50, 0.15);
+        }}
+        .hero-ribbon {{
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            background: rgba(212, 175, 55, 0.2);
+            border: 1px solid {ACCENT_GOLD};
+            color: {ACCENT_GOLD};
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }}
+        .hero h1 {{
+            color: #FFFFFF !important;
+            font-size: clamp(2.2rem, 4vw, 3.5rem);
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }}
+        .hero p {{
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 650px;
+        }}
+
+        /* Eyebrow Headings */
+        .eyebrow {{
+            display: inline-block;
+            margin: 2rem 0 1rem;
+            color: {GREEN};
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }}
+
+        /* Streamlit Tabs Styling */
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 12px;
+            background-color: transparent;
+            border-bottom: 2px solid #E2E8F0;
+            padding-bottom: 8px;
+        }}
+        .stTabs [data-baseweb="tab"] {{
+            height: 48px;
+            white-space: pre;
+            border-radius: 12px;
+            background-color: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            color: #4A5568;
+            font-weight: 600;
+            padding: 0 20px;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }}
+        .stTabs [aria-selected="true"] {{
+            background-color: {GREEN} !important;
+            color: #FFFFFF !important;
+            border-color: {GREEN} !important;
+            box-shadow: 0 4px 12px rgba(15, 81, 50, 0.25) !important;
+        }}
+
+        /* BUTTONS STYLING (Global & Admin) */
+        .stButton>button {{
+            width: 100%;
+            border-radius: 12px !important;
+            height: 46px !important;
+            background: linear-gradient(135deg, {GREEN}, {LIGHT_GREEN}) !important;
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+            border: none !important;
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }}
+        .stButton>button:hover {{
+            transform: translateY(-2px) !important;
+            box-shadow: 0 6px 18px rgba(25, 135, 84, 0.35) !important;
+            background: linear-gradient(135deg, {LIGHT_GREEN}, {GREEN}) !important;
+        }}
+        .stButton>button:active {{
+            transform: translateY(0) !important;
+        }}
+
+        /* Delete Button Specific */
+        div[data-testid="stButton"] button:contains("ሰርዝ") {{
+            background: linear-gradient(135deg, #DC3545, #BB2D3B) !important;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2) !important;
+        }}
+
+        /* Price Pill */
+        .price-pill {{
+            display: inline-block;
+            margin: 0.8rem 0;
+            padding: 0.4rem 1rem;
+            border-radius: 50px;
+            background: rgba(15, 81, 50, 0.08);
+            color: {GREEN};
+            font-size: 1.1rem;
+            font-weight: 800;
+            border: 1px solid rgba(15, 81, 50, 0.15);
+        }}
+
+        /* Input Fields & Text Areas */
+        .stTextInput input, .stTextArea textarea, .stSelectbox select, .stNumberInput input {{
+            border-radius: 10px !important;
+            border: 1.5px solid #E2E8F0 !important;
+            padding: 0.6rem 1rem !important;
+            transition: all 0.2s ease !important;
+        }}
+        .stTextInput input:focus, .stTextArea textarea:focus {{
+            border-color: {GREEN} !important;
+            box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.1) !important;
+        }}
+
+        /* Expander & Cards */
+        .streamlit-expanderHeader {{
+            background-color: #FFFFFF !important;
+            border-radius: 12px !important;
+            border: 1px solid #E2E8F0 !important;
+            font-weight: 700 !important;
+            color: {GREEN} !important;
+        }}
+        .streamlit-expanderContent {{
+            background-color: #FFFFFF !important;
+            border-radius: 0 0 12px 12px !important;
+            border: 1px solid #E2E8F0 !important;
+            border-top: none !important;
+            padding: 1.5rem !important;
+        }}
+
+        /* Chatbot Container */
+        .stChatMessage {{
+            border-radius: 16px !important;
+            padding: 1rem !important;
+            margin-bottom: 0.8rem !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.03) !important;
+        }}
+
+        /* Gallery Empty Placeholder */
+        .gallery-empty {{
+            padding: 3rem 1rem;
+            border: 2px dashed #CBD5E0;
+            border-radius: 16px;
+            text-align: center;
+            color: #A0AEC0;
+            background: #FFFFFF;
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -220,7 +391,7 @@ def render_brand_header() -> None:
         """
         <div class="brand-mark">
             <span class="brand-symbol">✦</span>
-            <span>ኖካ <span style="opacity:.55;">/</span> NOOKA</span>
+            <span>ኖካ <span style="opacity:.4;">/</span> NOOKA</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -228,12 +399,12 @@ def render_brand_header() -> None:
 
 
 def _render_order_form(item: dict[str, Any], key_prefix: str) -> None:
-    with st.expander("አሁኑኑ ይዘዙ · Order Now"):
+    with st.expander("🛒 አሁኑኑ ይዘዙ (Order Now)"):
         with st.form(f"{key_prefix}_order_{item['id']}"):
             quantity = st.number_input("ብዛት", min_value=1, max_value=50, value=1, step=1, key=f"{key_prefix}_qty_{item['id']}")
             name = st.text_input("ሙሉ ስም", key=f"{key_prefix}_name_{item['id']}")
             phone = st.text_input("ስልክ ቁጥር", key=f"{key_prefix}_phone_{item['id']}")
-            submit = st.form_submit_button("ትዕዛዝ ላክ", use_container_width=True)
+            submit = st.form_submit_button("ትዕዛዝ አረጋግጥ", use_container_width=True)
 
         if submit:
             clean_name = name.strip()
@@ -242,7 +413,7 @@ def _render_order_form(item: dict[str, Any], key_prefix: str) -> None:
                 st.error("እባክዎ ሙሉ ስምዎን እና ስልክ ቁጥርዎን ያስገቡ።")
             else:
                 order = add_order({"item": item["name"], "category": item["category"], "quantity": int(quantity), "total": int(item["price"]) * int(quantity), "name": clean_name, "phone": clean_phone})
-                st.success(f"ትዕዛዝዎ ተልኳል! የትዕዛዝ ቁጥርዎ፦ {order['number']}")
+                st.success(f"🎉 ትዕዛዝዎ ተልኳል! የትዕዛዝ ቁጥርዎ፦ {order['number']}")
 
 
 def render_home() -> None:
@@ -260,12 +431,11 @@ def render_home() -> None:
         unsafe_allow_html=True,
     )
     
-    # የ Home ገጽ ምስል ካለ ማሳያ
     home_photo_path = _product_photo_path(home.get("photo_filename", ""))
     if home_photo_path:
         st.image(str(home_photo_path), use_container_width=True)
 
-    st.markdown('<div class="eyebrow">Products · ምርቶቻችን</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">FEATURED PRODUCTS · ምርቶቻችን</div>', unsafe_allow_html=True)
     catalog_items = store.get("items", [])
 
     if catalog_items:
@@ -279,9 +449,9 @@ def render_home() -> None:
                 if photo_path:
                     st.image(str(photo_path), use_container_width=True)
                 else:
-                    st.markdown('<div class="gallery-empty">ምስል አልተጫነም</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="gallery-empty">🖼️ ምስል አልተጫነም</div>', unsafe_allow_html=True)
 
-                st.markdown(f'<span class="price-pill">{item["price"]:,} ብር</span>', unsafe_allow_html=True)
+                st.markdown(f'<span class="price-pill">{item["price"]:,} ETB</span>', unsafe_allow_html=True)
                 _render_order_form(item, key_prefix="home")
 
 
@@ -289,7 +459,7 @@ def render_chatbot() -> None:
     store = read_store()
     chatbot_config = store.get("chatbot", CHATBOT_DEFAULTS)
     
-    st.markdown('<div class="eyebrow">AI Assistant · የደንበኞች ረዳት</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">AI ASSISTANT · የደንበኞች ረዳት</div>', unsafe_allow_html=True)
     st.markdown("<h2>ስለ ኖካ / NOOKA ምርቶች ይጠይቁ</h2>", unsafe_allow_html=True)
 
     if "chat_history" not in st.session_state:
@@ -310,20 +480,19 @@ def render_chatbot() -> None:
 
 def render_about() -> None:
     about = read_store().get("about", ABOUT_DEFAULTS)
-    st.markdown('<div class="eyebrow">About · ስለ እኛ</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">ABOUT US · ስለ እኛ</div>', unsafe_allow_html=True)
     st.markdown(f"<h1>{about.get('title', '')}</h1>", unsafe_allow_html=True)
     
-    # የ About ገጽ ምስል ካለ ማሳያ
     about_photo_path = _product_photo_path(about.get("photo_filename", ""))
     if about_photo_path:
         st.image(str(about_photo_path), use_container_width=True)
         
-    st.markdown(f"<p style='white-space:pre-line;'>{about.get('body', '')}</p>", unsafe_allow_html=True)
+    st.markdown(f"<p style='white-space:pre-line; font-size: 1.1rem; line-height: 1.8;'>{about.get('body', '')}</p>", unsafe_allow_html=True)
 
 
-# --- 🛠️ FULL ADMIN DASHBOARD SYSTEM ---
+# --- 🛠️ PROFESSIONAL ADMIN DASHBOARD SYSTEM ---
 def render_admin_dashboard() -> None:
-    st.markdown('<div class="eyebrow">Admin Control Panel</div>', unsafe_allow_html=True)
+    st.markdown('<div class="eyebrow">ADMIN CONTROL PANEL</div>', unsafe_allow_html=True)
     st.markdown("<h1>የኖካ (NOOKA) አስተዳዳሪ ገጽ</h1>", unsafe_allow_html=True)
 
     if "admin_authenticated" not in st.session_state:
@@ -342,7 +511,7 @@ def render_admin_dashboard() -> None:
         return
 
     admin_tab1, admin_tab2, admin_tab3, admin_tab4, admin_tab5 = st.tabs([
-        "📦 ትዕዛዞች", "🛍️ ምርቶች", "🏠 Home ገፅ", "🤖 AI Chatbot", "ℹ️ About ገፅ"
+        "📦 ትዕዛዞች (Orders)", "🛍️ የምርት መቆጣጠሪያ", "🏠 Home ገፅ", "🤖 AI Chatbot", "ℹ️ About ገፅ"
     ])
 
     store = read_store()
