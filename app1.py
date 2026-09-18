@@ -183,7 +183,7 @@ def inject_styles() -> None:
     st.markdown(
         f"""
         <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=Noto+Sans+Ethiopic:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=Noto+Sans+Ethiopic:wght@400;500;600;700;800;900&display=swap');
 
         /* App Main Background */
         .stApp {{
@@ -258,6 +258,30 @@ def inject_styles() -> None:
             max-width: 650px;
         }}
 
+        /* 1. "FEATURED PRODUCTS · ምርቶቻችን" Header Styling */
+        .section-header {{
+            font-size: 1.3rem !important;
+            font-weight: 900 !important;
+            letter-spacing: 1.5px !important;
+            background: linear-gradient(90deg, {GREEN}, {ACCENT_GOLD});
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin: 2.5rem 0 1.2rem 0 !important;
+            text-transform: uppercase;
+        }}
+
+        /* 2. Product Title Shiny & Bold Gradient Styling */
+        .product-title {{
+            font-size: 1.8rem !important;
+            font-weight: 900 !important;
+            line-height: 1.3 !important;
+            background: linear-gradient(135deg, {GREEN} 0%, {LIGHT_GREEN} 50%, {ACCENT_GOLD} 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0px 4px 12px rgba(15, 81, 50, 0.12);
+            margin-bottom: 0.2rem !important;
+        }}
+
         /* Eyebrow Headings */
         .eyebrow {{
             display: inline-block;
@@ -295,7 +319,7 @@ def inject_styles() -> None:
             box-shadow: 0 4px 12px rgba(15, 81, 50, 0.25) !important;
         }}
 
-        /* BUTTONS STYLING (Global & Admin) */
+        /* BUTTONS STYLING (Form Submission) */
         .stButton>button {{
             width: 100%;
             border-radius: 12px !important;
@@ -316,10 +340,37 @@ def inject_styles() -> None:
             transform: translateY(0) !important;
         }}
 
-        /* Delete Button Specific */
-        div[data-testid="stButton"] button:contains("ሰርዝ") {{
-            background: linear-gradient(135deg, #DC3545, #BB2D3B) !important;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2) !important;
+        /* 3. "Order Now / አሁኑኑ ይዘዙ" Expander Button Hover Styling */
+        div[data-testid="stExpander"] {{
+            border: none !important;
+            border-radius: 14px !important;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease-in-out !important;
+        }}
+
+        div[data-testid="stExpander"]:hover {{
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(15, 81, 50, 0.2) !important;
+        }}
+
+        div[data-testid="stExpander"] summary {{
+            background: linear-gradient(135deg, {GREEN}, {LIGHT_GREEN}) !important;
+            color: #FFFFFF !important;
+            border-radius: 12px !important;
+            padding: 0.8rem 1.2rem !important;
+            font-weight: 800 !important;
+            font-size: 1.05rem !important;
+            transition: background 0.3s ease !important;
+        }}
+
+        div[data-testid="stExpander"] summary:hover {{
+            background: linear-gradient(135deg, {LIGHT_GREEN}, {GREEN}) !important;
+            color: {ACCENT_GOLD} !important;
+        }}
+
+        div[data-testid="stExpander"] summary svg {{
+            fill: #FFFFFF !important;
         }}
 
         /* Price Pill */
@@ -347,14 +398,7 @@ def inject_styles() -> None:
             box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.1) !important;
         }}
 
-        /* Expander & Cards */
-        .streamlit-expanderHeader {{
-            background-color: #FFFFFF !important;
-            border-radius: 12px !important;
-            border: 1px solid #E2E8F0 !important;
-            font-weight: 700 !important;
-            color: {GREEN} !important;
-        }}
+        /* Expander Content Container */
         .streamlit-expanderContent {{
             background-color: #FFFFFF !important;
             border-radius: 0 0 12px 12px !important;
@@ -435,14 +479,14 @@ def render_home() -> None:
     if home_photo_path:
         st.image(str(home_photo_path), use_container_width=True)
 
-    st.markdown('<div class="eyebrow">FEATURED PRODUCTS · ምርቶቻችን</div>', unsafe_allow_html=True)
+    st.markdown('<div class="section-header">✦ FEATURED PRODUCTS · ምርቶቻችን</div>', unsafe_allow_html=True)
     catalog_items = store.get("items", [])
 
     if catalog_items:
         cols = st.columns(min(3, len(catalog_items)))
         for idx, item in enumerate(catalog_items):
             with cols[idx % len(cols)]:
-                st.subheader(item["name"])
+                st.markdown(f'<div class="product-title">{item["name"]}</div>', unsafe_allow_html=True)
                 st.caption(f"ዓይነት፦ {item['category']}")
 
                 photo_path = _product_photo_path(item.get("photo_filename", ""))
