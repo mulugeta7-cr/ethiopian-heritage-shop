@@ -39,7 +39,7 @@ HOME_DEFAULTS = {
 
 ABOUT_DEFAULTS = {
     "title": "ስለ እኛ · About Us",
-    "body": "ኖካ / NOOKA የተመሰረተው የኢትዮጵያን ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ ለማድረስ ነው። እያንዳንዱ ምርት በጥንቃቄ እና በፍቅር የተዘጋጀ ነው።",
+    "body": "ኖካ / NOOKA የተመሰረተው የየቦር ሺናሻ ባህላዊ ልብስ እና ምግብ ከቤተሰብ ወደ ቤተሰብ ለማድረስ ነው። እያንዳንዱ ምርት በጥንቃቄ እና በፍቅር የተዘጋጀ ነው።",
     "photo_filename": "",
 }
 
@@ -210,6 +210,11 @@ def inject_styles() -> None:
             background: rgba(15, 81, 50, 0.05);
             border-radius: 12px;
             border: 1px solid rgba(15, 81, 50, 0.1);
+            transition: all 0.3s ease;
+        }}
+        .brand-mark:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(15, 81, 50, 0.12);
         }}
         .brand-symbol {{
             display: inline-flex;
@@ -258,7 +263,7 @@ def inject_styles() -> None:
             max-width: 650px;
         }}
 
-        /* 1. "FEATURED PRODUCTS · ምርቶቻችን" Header Styling */
+        /* SECTION HEADERS (Featured, AI Assistant, About Us Eyebrow) */
         .section-header {{
             font-size: 1.3rem !important;
             font-weight: 900 !important;
@@ -266,11 +271,17 @@ def inject_styles() -> None:
             background: linear-gradient(90deg, {GREEN}, {ACCENT_GOLD});
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin: 2.5rem 0 1.2rem 0 !important;
+            margin: 2rem 0 1rem 0 !important;
             text-transform: uppercase;
+            display: inline-block;
+            transition: all 0.3s ease;
+        }}
+        .section-header:hover {{
+            transform: translateX(5px);
+            filter: drop-shadow(0px 2px 8px rgba(15, 81, 50, 0.3));
         }}
 
-        /* 2. Product Title Shiny & Bold Gradient Styling */
+        /* PRODUCT TITLE (Shiny & Bold with Hover) */
         .product-title {{
             font-size: 1.8rem !important;
             font-weight: 900 !important;
@@ -280,17 +291,106 @@ def inject_styles() -> None:
             -webkit-text-fill-color: transparent;
             text-shadow: 0px 4px 12px rgba(15, 81, 50, 0.12);
             margin-bottom: 0.2rem !important;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+        }}
+        .product-title:hover {{
+            transform: scale(1.02);
+            filter: brightness(1.2);
         }}
 
-        /* Eyebrow Headings */
-        .eyebrow {{
+        /* ✨ AI CHATBOT & ABOUT US PAGE HOVER EFFECTS ✨ */
+
+        /* Page Main Titles (AI Page & About Us Title) */
+        .page-title {{
+            font-size: clamp(1.8rem, 3.5vw, 2.5rem) !important;
+            font-weight: 900 !important;
+            color: #1E293B;
+            margin-bottom: 1.5rem !important;
             display: inline-block;
-            margin: 2rem 0 1rem;
-            color: {GREEN};
-            font-size: 0.85rem;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            background: linear-gradient(135deg, #1E293B 0%, {GREEN} 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }}
+        .page-title:hover {{
+            transform: translateY(-3px) scale(1.01);
+            background: linear-gradient(135deg, {GREEN} 0%, {ACCENT_GOLD} 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0px 4px 12px rgba(15, 81, 50, 0.25));
+        }}
+
+        /* Streamlit AI Chat Messages Container Hover */
+        .stChatMessage {{
+            border-radius: 18px !important;
+            padding: 1.2rem !important;
+            margin-bottom: 1rem !important;
+            background-color: #FFFFFF !important;
+            border: 1px solid rgba(15, 81, 50, 0.08) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }}
+        .stChatMessage:hover {{
+            transform: translateY(-3px) scale(1.005);
+            box-shadow: 0 8px 25px rgba(15, 81, 50, 0.12) !important;
+            border-color: rgba(15, 81, 50, 0.3) !important;
+        }}
+
+        /* AI Chat Input Box Hover & Focus Effect */
+        div[data-testid="stChatInput"] {{
+            border-radius: 20px !important;
+            transition: all 0.3s ease !important;
+        }}
+        div[data-testid="stChatInput"] > div {{
+            border-radius: 20px !important;
+            border: 2px solid #E2E8F0 !important;
+            background-color: #FFFFFF !important;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }}
+        div[data-testid="stChatInput"] > div:hover {{
+            border-color: {GREEN} !important;
+            box-shadow: 0 6px 20px rgba(15, 81, 50, 0.15) !important;
+            transform: translateY(-2px);
+        }}
+        div[data-testid="stChatInput"] textarea:focus {{
+            color: #1A1A1A !important;
+        }}
+
+        /* About Us Text Content Card Hover Effect */
+        .about-card {{
+            background: #FFFFFF;
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid rgba(15, 81, 50, 0.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.03);
+            margin-top: 1.5rem;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }}
+        .about-card:hover {{
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(15, 81, 50, 0.15);
+            border-color: {GREEN};
+        }}
+        .about-card p {{
+            font-size: 1.15rem;
+            line-height: 1.8;
+            color: #334155;
+            margin: 0;
+        }}
+
+        /* Image Hover Zoom Container */
+        .hover-image-container {{
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+            transition: all 0.4s ease;
+            margin-bottom: 1.5rem;
+        }}
+        .hover-image-container:hover {{
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px rgba(15, 81, 50, 0.2);
         }}
 
         /* Streamlit Tabs Styling */
@@ -319,7 +419,7 @@ def inject_styles() -> None:
             box-shadow: 0 4px 12px rgba(15, 81, 50, 0.25) !important;
         }}
 
-        /* BUTTONS STYLING (Form Submission) */
+        /* BUTTONS STYLING */
         .stButton>button {{
             width: 100%;
             border-radius: 12px !important;
@@ -336,11 +436,8 @@ def inject_styles() -> None:
             box-shadow: 0 6px 18px rgba(25, 135, 84, 0.35) !important;
             background: linear-gradient(135deg, {LIGHT_GREEN}, {GREEN}) !important;
         }}
-        .stButton>button:active {{
-            transform: translateY(0) !important;
-        }}
 
-        /* 3. "Order Now / አሁኑኑ ይዘዙ" Expander Button Hover Styling */
+        /* Expander Button Hover Styling */
         div[data-testid="stExpander"] {{
             border: none !important;
             border-radius: 14px !important;
@@ -386,7 +483,7 @@ def inject_styles() -> None:
             border: 1px solid rgba(15, 81, 50, 0.15);
         }}
 
-        /* Input Fields & Text Areas */
+        /* Input Fields */
         .stTextInput input, .stTextArea textarea, .stSelectbox select, .stNumberInput input {{
             border-radius: 10px !important;
             border: 1.5px solid #E2E8F0 !important;
@@ -398,7 +495,6 @@ def inject_styles() -> None:
             box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.1) !important;
         }}
 
-        /* Expander Content Container */
         .streamlit-expanderContent {{
             background-color: #FFFFFF !important;
             border-radius: 0 0 12px 12px !important;
@@ -407,15 +503,6 @@ def inject_styles() -> None:
             padding: 1.5rem !important;
         }}
 
-        /* Chatbot Container */
-        .stChatMessage {{
-            border-radius: 16px !important;
-            padding: 1rem !important;
-            margin-bottom: 0.8rem !important;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03) !important;
-        }}
-
-        /* Gallery Empty Placeholder */
         .gallery-empty {{
             padding: 3rem 1rem;
             border: 2px dashed #CBD5E0;
@@ -503,8 +590,8 @@ def render_chatbot() -> None:
     store = read_store()
     chatbot_config = store.get("chatbot", CHATBOT_DEFAULTS)
     
-    st.markdown('<div class="eyebrow">AI ASSISTANT · የደንበኞች ረዳት</div>', unsafe_allow_html=True)
-    st.markdown("<h2>ስለ ኖካ / NOOKA ምርቶች ይጠይቁ</h2>", unsafe_allow_html=True)
+    st.markdown('<div class="section-header">✦ AI ASSISTANT · የደንበኞች ረዳት</div>', unsafe_allow_html=True)
+    st.markdown('<div class="page-title">ስለ ኖካ / NOOKA ምርቶች ይጠይቁ</div>', unsafe_allow_html=True)
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = [{"role": "assistant", "content": chatbot_config.get("system_instruction", CHATBOT_DEFAULTS["system_instruction"])}]
@@ -524,17 +611,26 @@ def render_chatbot() -> None:
 
 def render_about() -> None:
     about = read_store().get("about", ABOUT_DEFAULTS)
-    st.markdown('<div class="eyebrow">ABOUT US · ስለ እኛ</div>', unsafe_allow_html=True)
-    st.markdown(f"<h1>{about.get('title', '')}</h1>", unsafe_allow_html=True)
+    st.markdown('<div class="section-header">✦ ABOUT US · ስለ እኛ</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="page-title">{about.get("title", "")}</div>', unsafe_allow_html=True)
     
     about_photo_path = _product_photo_path(about.get("photo_filename", ""))
     if about_photo_path:
+        st.markdown('<div class="hover-image-container">', unsafe_allow_html=True)
         st.image(str(about_photo_path), use_container_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
         
-    st.markdown(f"<p style='white-space:pre-line; font-size: 1.1rem; line-height: 1.8;'>{about.get('body', '')}</p>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="about-card">
+            <p>{about.get('body', '')}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
-# --- 🛠️ PROFESSIONAL ADMIN DASHBOARD SYSTEM ---
+# --- 🛠️ ADMIN DASHBOARD SYSTEM ---
 def render_admin_dashboard() -> None:
     st.markdown('<div class="eyebrow">ADMIN CONTROL PANEL</div>', unsafe_allow_html=True)
     st.markdown("<h1>የኖካ (NOOKA) አስተዳዳሪ ገጽ</h1>", unsafe_allow_html=True)
