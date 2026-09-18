@@ -24,10 +24,10 @@ CARD_BG = "#FFFFFF"
 CREAM = "#F9F8F3"
 
 DEFAULT_ORDER_ITEMS = [
-    {"id": "default-1", "category": "ልብስ", "name": "የወንዶች ባህላዊ ካባ", "price": 4000, "photo_filename": ""},
-    {"id": "default-2", "category": "ልብስ", "name": "የልጆች ባህላዊ ልብስ", "price": 1800, "photo_filename": ""},
-    {"id": "default-3", "category": "ምግብ", "name": "ዶሮ ወጥ ከእንጀራ ጋር", "price": 450, "photo_filename": ""},
-    {"id": "default-4", "category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 950, "photo_filename": ""},
+    {"id": "default-1", "category": "ልብስ", "name": "የወንዶች ባህላዊ ልብስ", "price": 4000, "photo_filename": ""},
+    {"id": "default-2", "category": "ልብስ", "name": "የሴቶች ባህላዊ ልብስ", "price": 5000, "photo_filename": ""},
+    {"id": "default-3", "category": "ምግብ", "name": "ዶሮ በበሬ", "price": 4500, "photo_filename": ""},
+    {"id": "default-4", "category": "ምግብ", "name": "የበዓል ምግብ ጥቅል", "price": 5000, "photo_filename": ""},
 ]
 
 HOME_DEFAULTS = {
@@ -178,7 +178,7 @@ def _product_photo_path(filename: str) -> Path | None:
     return photo_path if photo_path.exists() else None
 
 
-# 🎨 ADVANCED PROFESSIONAL CSS STYLING
+# 🎨 ADVANCED PROFESSIONAL CSS STYLING (FIXED IMAGE SIZES)
 def inject_styles() -> None:
     st.markdown(
         f"""
@@ -263,7 +263,7 @@ def inject_styles() -> None:
             max-width: 650px;
         }}
 
-        /* SECTION HEADERS (Featured, AI Assistant, About Us Eyebrow) */
+        /* SECTION HEADERS */
         .section-header {{
             font-size: 1.3rem !important;
             font-weight: 900 !important;
@@ -276,49 +276,73 @@ def inject_styles() -> None:
             display: inline-block;
             transition: all 0.3s ease;
         }}
-        .section-header:hover {{
-            transform: translateX(5px);
-            filter: drop-shadow(0px 2px 8px rgba(15, 81, 50, 0.3));
+
+        /* PRODUCT CARD & FIXED IMAGE STYLING */
+        .product-card {{
+            background: #FFFFFF;
+            border-radius: 18px;
+            padding: 1rem;
+            border: 1px solid rgba(15, 81, 50, 0.08);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            height: 100%;
+            margin-bottom: 1rem;
+        }}
+        .product-card:hover {{
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(15, 81, 50, 0.12);
+            border-color: rgba(15, 81, 50, 0.2);
         }}
 
-        /* PRODUCT TITLE (Shiny & Bold with Hover) */
+        /* 🖼️ የሁሉም ምርት ምስሎች እኩል መጠን እንዲኖራቸው የሚያደርገው CSS */
+        .img-container {{
+            width: 100%;
+            height: 280px; /* ቋሚ ቁመት */
+            border-radius: 14px;
+            overflow: hidden;
+            background-color: #F8FAFC;
+            margin: 0.5rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }}
+        .img-container img {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* ምስሉ ሳይዛባ ሳጥኑን እኩል ይሞላል */
+            object-position: center;
+            transition: transform 0.4s ease;
+        }}
+        .product-card:hover .img-container img {{
+            transform: scale(1.05);
+        }}
+
         .product-title {{
-            font-size: 1.8rem !important;
-            font-weight: 900 !important;
-            line-height: 1.3 !important;
-            background: linear-gradient(135deg, {GREEN} 0%, {LIGHT_GREEN} 50%, {ACCENT_GOLD} 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0px 4px 12px rgba(15, 81, 50, 0.12);
+            font-size: 1.25rem !important;
+            font-weight: 800 !important;
+            color: #1E293B;
             margin-bottom: 0.2rem !important;
-            transition: all 0.3s ease-in-out;
-            cursor: pointer;
-        }}
-        .product-title:hover {{
-            transform: scale(1.02);
-            filter: brightness(1.2);
+            height: 2.8rem; /* እኩል የፅሁፍ ቦታ */
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }}
 
-        /* ✨ AI CHATBOT & ABOUT US PAGE HOVER EFFECTS ✨ */
-
-        /* Page Main Titles (AI Page & About Us Title) */
+        /* Page Main Titles */
         .page-title {{
             font-size: clamp(1.8rem, 3.5vw, 2.5rem) !important;
             font-weight: 900 !important;
             color: #1E293B;
             margin-bottom: 1.5rem !important;
             display: inline-block;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.4s ease;
             background: linear-gradient(135deg, #1E293B 0%, {GREEN} 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-        }}
-        .page-title:hover {{
-            transform: translateY(-3px) scale(1.01);
-            background: linear-gradient(135deg, {GREEN} 0%, {ACCENT_GOLD} 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(0px 4px 12px rgba(15, 81, 50, 0.25));
         }}
 
         /* Streamlit AI Chat Messages Container Hover */
@@ -329,36 +353,29 @@ def inject_styles() -> None:
             background-color: #FFFFFF !important;
             border: 1px solid rgba(15, 81, 50, 0.08) !important;
             box-shadow: 0 4px 12px rgba(0,0,0,0.03) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.3s ease !important;
         }}
         .stChatMessage:hover {{
-            transform: translateY(-3px) scale(1.005);
+            transform: translateY(-3px);
             box-shadow: 0 8px 25px rgba(15, 81, 50, 0.12) !important;
             border-color: rgba(15, 81, 50, 0.3) !important;
         }}
 
         /* AI Chat Input Box Hover & Focus Effect */
-        div[data-testid="stChatInput"] {{
-            border-radius: 20px !important;
-            transition: all 0.3s ease !important;
-        }}
         div[data-testid="stChatInput"] > div {{
             border-radius: 20px !important;
             border: 2px solid #E2E8F0 !important;
             background-color: #FFFFFF !important;
             box-shadow: 0 4px 15px rgba(0,0,0,0.03) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.3s ease !important;
         }}
         div[data-testid="stChatInput"] > div:hover {{
             border-color: {GREEN} !important;
             box-shadow: 0 6px 20px rgba(15, 81, 50, 0.15) !important;
             transform: translateY(-2px);
         }}
-        div[data-testid="stChatInput"] textarea:focus {{
-            color: #1A1A1A !important;
-        }}
 
-        /* About Us Text Content Card Hover Effect */
+        /* About Us Text Content Card */
         .about-card {{
             background: #FFFFFF;
             padding: 2rem;
@@ -366,31 +383,12 @@ def inject_styles() -> None:
             border: 1px solid rgba(15, 81, 50, 0.1);
             box-shadow: 0 6px 20px rgba(0,0,0,0.03);
             margin-top: 1.5rem;
-            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.35s ease;
         }}
         .about-card:hover {{
             transform: translateY(-5px);
             box-shadow: 0 12px 30px rgba(15, 81, 50, 0.15);
             border-color: {GREEN};
-        }}
-        .about-card p {{
-            font-size: 1.15rem;
-            line-height: 1.8;
-            color: #334155;
-            margin: 0;
-        }}
-
-        /* Image Hover Zoom Container */
-        .hover-image-container {{
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
-            transition: all 0.4s ease;
-            margin-bottom: 1.5rem;
-        }}
-        .hover-image-container:hover {{
-            transform: translateY(-4px);
-            box-shadow: 0 15px 35px rgba(15, 81, 50, 0.2);
         }}
 
         /* Streamlit Tabs Styling */
@@ -402,7 +400,6 @@ def inject_styles() -> None:
         }}
         .stTabs [data-baseweb="tab"] {{
             height: 48px;
-            white-space: pre;
             border-radius: 12px;
             background-color: #FFFFFF;
             border: 1px solid #E2E8F0;
@@ -410,13 +407,11 @@ def inject_styles() -> None:
             font-weight: 600;
             padding: 0 20px;
             transition: all 0.25s ease;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
         }}
         .stTabs [aria-selected="true"] {{
             background-color: {GREEN} !important;
             color: #FFFFFF !important;
             border-color: {GREEN} !important;
-            box-shadow: 0 4px 12px rgba(15, 81, 50, 0.25) !important;
         }}
 
         /* BUTTONS STYLING */
@@ -429,51 +424,17 @@ def inject_styles() -> None:
             font-weight: 700 !important;
             border: none !important;
             box-shadow: 0 4px 12px rgba(25, 135, 84, 0.2) !important;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            transition: all 0.3s ease !important;
         }}
         .stButton>button:hover {{
             transform: translateY(-2px) !important;
             box-shadow: 0 6px 18px rgba(25, 135, 84, 0.35) !important;
-            background: linear-gradient(135deg, {LIGHT_GREEN}, {GREEN}) !important;
-        }}
-
-        /* Expander Button Hover Styling */
-        div[data-testid="stExpander"] {{
-            border: none !important;
-            border-radius: 14px !important;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s ease-in-out !important;
-        }}
-
-        div[data-testid="stExpander"]:hover {{
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(15, 81, 50, 0.2) !important;
-        }}
-
-        div[data-testid="stExpander"] summary {{
-            background: linear-gradient(135deg, {GREEN}, {LIGHT_GREEN}) !important;
-            color: #FFFFFF !important;
-            border-radius: 12px !important;
-            padding: 0.8rem 1.2rem !important;
-            font-weight: 800 !important;
-            font-size: 1.05rem !important;
-            transition: background 0.3s ease !important;
-        }}
-
-        div[data-testid="stExpander"] summary:hover {{
-            background: linear-gradient(135deg, {LIGHT_GREEN}, {GREEN}) !important;
-            color: {ACCENT_GOLD} !important;
-        }}
-
-        div[data-testid="stExpander"] summary svg {{
-            fill: #FFFFFF !important;
         }}
 
         /* Price Pill */
         .price-pill {{
             display: inline-block;
-            margin: 0.8rem 0;
+            margin: 0.5rem 0;
             padding: 0.4rem 1rem;
             border-radius: 50px;
             background: rgba(15, 81, 50, 0.08);
@@ -481,35 +442,19 @@ def inject_styles() -> None:
             font-size: 1.1rem;
             font-weight: 800;
             border: 1px solid rgba(15, 81, 50, 0.15);
-        }}
-
-        /* Input Fields */
-        .stTextInput input, .stTextArea textarea, .stSelectbox select, .stNumberInput input {{
-            border-radius: 10px !important;
-            border: 1.5px solid #E2E8F0 !important;
-            padding: 0.6rem 1rem !important;
-            transition: all 0.2s ease !important;
-        }}
-        .stTextInput input:focus, .stTextArea textarea:focus {{
-            border-color: {GREEN} !important;
-            box-shadow: 0 0 0 3px rgba(15, 81, 50, 0.1) !important;
-        }}
-
-        .streamlit-expanderContent {{
-            background-color: #FFFFFF !important;
-            border-radius: 0 0 12px 12px !important;
-            border: 1px solid #E2E8F0 !important;
-            border-top: none !important;
-            padding: 1.5rem !important;
+            text-align: center;
         }}
 
         .gallery-empty {{
-            padding: 3rem 1rem;
+            height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border: 2px dashed #CBD5E0;
-            border-radius: 16px;
-            text-align: center;
+            border-radius: 14px;
             color: #A0AEC0;
             background: #FFFFFF;
+            margin: 0.5rem 0;
         }}
         </style>
         """,
@@ -561,29 +506,40 @@ def render_home() -> None:
         """,
         unsafe_allow_html=True,
     )
-    
-    home_photo_path = _product_photo_path(home.get("photo_filename", ""))
-    if home_photo_path:
-        st.image(str(home_photo_path), use_container_width=True)
 
     st.markdown('<div class="section-header">✦ FEATURED PRODUCTS · ምርቶቻችን</div>', unsafe_allow_html=True)
     catalog_items = store.get("items", [])
 
     if catalog_items:
-        cols = st.columns(min(3, len(catalog_items)))
+        # በ 3 Column ከፋፍሎ ምርቶችን ማሳየት
+        cols = st.columns(3)
         for idx, item in enumerate(catalog_items):
-            with cols[idx % len(cols)]:
+            with cols[idx % 3]:
+                st.markdown('<div class="product-card">', unsafe_allow_html=True)
                 st.markdown(f'<div class="product-title">{item["name"]}</div>', unsafe_allow_html=True)
                 st.caption(f"ዓይነት፦ {item['category']}")
 
                 photo_path = _product_photo_path(item.get("photo_filename", ""))
                 if photo_path:
-                    st.image(str(photo_path), use_container_width=True)
+                    # 🖼️ Base64 / File Path በመጠቀም ምስሎቹን በ CSS ቋሚ መጠን ማድረግ
+                    import base64
+                    with open(photo_path, "rb") as image_file:
+                        encoded_string = base64.b64encode(image_file.read()).decode()
+                    
+                    st.markdown(
+                        f'''
+                        <div class="img-container">
+                            <img src="data:image/png;base64,{encoded_string}" alt="{item['name']}">
+                        </div>
+                        ''', 
+                        unsafe_allow_html=True
+                    )
                 else:
                     st.markdown('<div class="gallery-empty">🖼️ ምስል አልተጫነም</div>', unsafe_allow_html=True)
 
-                st.markdown(f'<span class="price-pill">{item["price"]:,} ETB</span>', unsafe_allow_html=True)
+                st.markdown(f'<div class="price-pill">{item["price"]:,} ETB</div>', unsafe_allow_html=True)
                 _render_order_form(item, key_prefix="home")
+                st.markdown('</div>', unsafe_allow_html=True)
 
 
 def render_chatbot() -> None:
@@ -616,9 +572,17 @@ def render_about() -> None:
     
     about_photo_path = _product_photo_path(about.get("photo_filename", ""))
     if about_photo_path:
-        st.markdown('<div class="hover-image-container">', unsafe_allow_html=True)
-        st.image(str(about_photo_path), use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+        import base64
+        with open(about_photo_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        st.markdown(
+            f'''
+            <div style="width:100%; max-height: 500px; overflow:hidden; border-radius:20px; margin-bottom:1.5rem;">
+                <img src="data:image/png;base64,{encoded_string}" style="width:100%; height:100%; object-fit:cover;">
+            </div>
+            ''', 
+            unsafe_allow_html=True
+        )
         
     st.markdown(
         f"""
@@ -630,7 +594,6 @@ def render_about() -> None:
     )
 
 
-# --- 🛠️ ADMIN DASHBOARD SYSTEM ---
 def render_admin_dashboard() -> None:
     st.markdown('<div class="eyebrow">ADMIN CONTROL PANEL</div>', unsafe_allow_html=True)
     st.markdown("<h1>የኖካ (NOOKA) አስተዳዳሪ ገጽ</h1>", unsafe_allow_html=True)
@@ -715,7 +678,7 @@ def render_admin_dashboard() -> None:
                     st.warning("ምርቱ ተሰርዟል!")
                     st.rerun()
 
-    # Tab 3: Home Page Content & Image Upload
+    # Tab 3: Home Page
     with admin_tab3:
         st.subheader("የመነሻ ገጽ (Home Page) ማስተካከያ")
         home_data = store.get("home", HOME_DEFAULTS)
@@ -747,7 +710,7 @@ def render_admin_dashboard() -> None:
                 st.success("የ Chatbot መመሪያ ተዘምኗል!")
                 st.rerun()
 
-    # Tab 5: About Us Content & Image Upload
+    # Tab 5: About Us
     with admin_tab5:
         st.subheader("የስለ እኛ (About Us) ገጽ ማስተካከያ")
         about_data = store.get("about", ABOUT_DEFAULTS)
